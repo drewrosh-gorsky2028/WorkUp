@@ -326,11 +326,13 @@ function num(v) { var x = parseFloat(String(v).replace(',', '.')); return isFini
 function round1(x) { return Math.round(x * 10) / 10; }
 function sorted() { return S.workouts.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
 function groupsOf(w) {
+  // Only what you actually logged counts; picking a group (like abs) is just the plan
   var set = {};
-  (w.groups || []).forEach(function (g) { set[g] = 1; });
   (w.sets || []).forEach(function (s) { set[s.group] = 1; });
+  if (!(w.sets || []).length) (w.groups || []).forEach(function (g) { set[g] = 1; });
   return set;
 }
+function didAbs(w) { return (w.sets || []).some(function (s) { return s.group === 'abs'; }); }
 function lastFor(group) {
   var ws = sorted();
   for (var i = ws.length - 1; i >= 0; i--) if (groupsOf(ws[i])[group]) return ws[i].date;
@@ -541,11 +543,14 @@ function workoutView() {
     h += '<button class="ghost repeat" data-act="repeat"' + (l ? '' : ' disabled') + '>↻ Repeat last set' + (l ? '<small>' + esc(l.name) + ' · ' + esc(fmtSet(l)) + '</small>' : '') + '</button>';
   }
   h += '<div class="toast" id="toast" aria-live="polite">' + esc(toastMsg) + '</div>';
+  if (!didAbs(w) && u.g !== 'abs') h += '<button class="xlink" data-act="wg" data-g="abs"><span class="xl">Abs: not done yet</span><span class="xv">Tap when you\'re ready to get them over with</span></button>';
   h += '<div class="log"><span class="head">Today\'s log</span>' + (w.sets.length ? '<ul>' + w.sets.map(function (s, i) {
     return '<li><span>×</span><span>' + esc(s.name) + ' · ' + esc(fmtSet(s)) + ' <em>(' + (s.cat === 'cardio' ? 'cardio' : GN[s.group] + ', ' + CN[s.cat]) + ')</em></span>' +
       '<button class="rm" data-act="rmset" data-i="' + i + '">' + (armed === 'rm' + i ? 'remove?' : '✕') + '</button></li>';
   }).join('') + '</ul>' : '<span class="small muted">Nothing logged yet</span>') + '</div>';
-  h += w.sets.length ? '<button class="btn" data-act="finish">Finish workout</button>'
+  if (armed === 'finish') h += '<div class="why" style="display:flex;flex-direction:column;gap:8px"><span class="head pen">No abs today?</span>' +
+    '<button class="btn" data-act="wg" data-g="abs">Do abs now</button><button class="ghost" data-act="finish">Skip abs and finish</button></div>';
+  else h += w.sets.length ? '<button class="btn" data-act="finish">Finish workout</button>'
     : '<button class="danger" data-act="discard">' + (armed === 'discard' ? 'Tap again to discard' : 'Discard workout') + '</button>';
   return h;
 }
@@ -625,8 +630,8 @@ function wrappedCards(month) {
     if (up > 0 && (!best || up > best.up)) best = { name: s.name, up: up, from: first[s.name], to: s.weight };
   }); });
   if (best) cards.push(['purple', '<span class="eyebrow">Biggest glow up</span><div class="big">+' + best.up + '</div><p>' + S.unit + ' on <b>' + esc(best.name) + '</b>, from ' + best.from + ' to ' + best.to + ' ' + S.unit + '.</p>']);
-  var abs = ws.filter(function (w) { return groupsOf(w).abs; }).length;
-  cards.push(['deep', '<span class="eyebrow">The one you hate</span><h2>Abs: ' + abs + ' out of ' + ws.length + ' workouts.</h2><p>' + (abs === ws.length ? 'You never skipped. You complained every time. We respect it.' : 'They\'re always on for a reason.') + '</p>']);
+  var abs = ws.filter(didAbs).length;
+  cards.push(['deep', '<span class="eyebrow">The one you hate</span><h2>Abs: ' + abs + ' out of ' + ws.length + ' workouts.</h2><p>' + (abs === ws.length ? 'You never skipped. You complained every time. We respect it.' : 'You skipped them ' + plural(ws.length - abs, 'time') + '. We noticed. They\'re always on for a reason.') + '</p>']);
   var cw = ws.filter(function (w) { return cardioMinutes(w) > 0; });
   var miles = round1(ws.reduce(function (t, w) { return t + w.sets.reduce(function (u, s) { return u + (s.cat === 'cardio' ? s.miles || 0 : 0); }, 0); }, 0));
   var mc = {}; ws.forEach(function (w) { w.sets.forEach(function (s) { if (s.cat === 'cardio') mc[s.name] = (mc[s.name] || 0) + 1; }); });
@@ -683,7 +688,7 @@ document.addEventListener('click', function (ev) {
   var t = ev.target.closest('[data-act]');
   if (!t || t.tagName === 'INPUT') return;
   var a = t.dataset.act, w = S.active, u = w && w.ui;
-  if (a !== armed && ['discard', 'reset', 'rmset', 'delw'].indexOf(a) < 0) armed = null;
+  if (a !== armed && ['discard', 'reset', 'rmset', 'delw', 'finish'].indexOf(a) < 0) armed = null;
   switch (a) {
     case 'go': go(t.dataset.v); return;
     case 'pick':
@@ -732,7 +737,9 @@ document.addEventListener('click', function (ev) {
       var i = +t.dataset.i;
       if (armed === 'rm' + i) { w.sets.splice(i, 1); armed = null; toastMsg = ''; save(); } else armed = 'rm' + i;
       break;
-    case 'finish': finishWorkout(); return;
+    case 'finish':
+      if (!didAbs(w) && armed !== 'finish') { armed = 'finish'; break; }
+      finishWorkout(); return;
     case 'discard':
       if (armed === 'discard') { S.active = null; save(); releaseWake(); go('home'); return; }
       armed = 'discard'; break;
