@@ -1,6 +1,6 @@
 # WorkUp
 
-A workout logger for iPhone that runs as a website. It logs strength, cardio and floor work, and after 14 logged workouts it starts suggesting which muscle group and exercises to train next.
+A workout logger for iPhone that runs as a website, styled like a black-page bullet journal. You tap the muscle groups you are working on a body map, log each set (weight or body weight, reps or a timer), and log cardio by machine, minutes and miles. After 14 logged workouts it starts suggesting exercises. Cardio of 20+ minutes fills a box on the Road to Xmas tracker, and each month gets a tap-through Wrapped story with progress photos.
 
 ## Use it on your iPhone
 
