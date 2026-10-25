@@ -60,7 +60,7 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .toast { min-height: 1.2em; font-size: 14px; font-weight: 600; color: var(--pen); }
 
 /* home */
-.mid { display: grid; grid-template-columns: 1fr 104px; gap: 8px; align-items: start; }
+.mid { position: relative; }
 .fig { width: 100%; height: auto; display: block; overflow: visible; touch-action: manipulation; }
 .fig .o { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
 .fig .tie { fill: var(--pen); }
@@ -72,14 +72,14 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .fig .hatch line { stroke: var(--pen); stroke-width: 1.4; }
 .fig text { font-family: var(--hand); font-size: 14px; font-weight: 600; fill: var(--ink); cursor: pointer; }
 .fig text.on { fill: var(--pen); font-weight: 700; }
-.cal { position: relative; border: 1.6px solid var(--ink); border-radius: 4px; padding: 20px 8px 8px; margin-top: 50px; text-align: center; background: transparent; width: 100%; }
+.cal { position: absolute; top: 6px; right: 0; width: 88px; border: 1.6px solid var(--ink); border-radius: 4px; padding: 14px 5px 6px; text-align: center; background: var(--paper); }
 .cal.on { border-color: var(--pen); box-shadow: 3px 3px 0 var(--pen); }
-.cal .head { justify-content: center; line-height: 1.15; }
-.rings { position: absolute; top: -8px; left: 8px; right: 8px; display: flex; justify-content: space-between; }
-.rings i { width: 9px; height: 16px; border: 1.6px solid var(--ink); border-radius: 6px; background: var(--paper); }
-.cal .page { border: 1.6px solid var(--pen); border-radius: 3px; margin: 6px 4px; padding: 4px 0 2px; }
-.cal .n { font-size: 42px; line-height: 1; font-weight: 700; color: var(--pen); }
-.cal .note { font-size: 11px; line-height: 1.25; opacity: .85; }
+.cal .head { justify-content: center; line-height: 1.15; font-size: 10px; }
+.rings { position: absolute; top: -7px; left: 7px; right: 7px; display: flex; justify-content: space-between; }
+.rings i { width: 7px; height: 13px; border: 1.6px solid var(--ink); border-radius: 6px; background: var(--paper); }
+.cal .page { border: 1.6px solid var(--pen); border-radius: 3px; margin: 4px 2px; padding: 2px 0 1px; line-height: 1.1; }
+.cal .n { font-size: 28px; line-height: 1; font-weight: 700; color: var(--pen); }
+.cal .note { font-size: 9.5px; line-height: 1.2; opacity: .85; }
 .picked { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1.6px dashed var(--ink); border-bottom: 1.6px dashed var(--ink); padding: 8px 2px; }
 .picked > div { display: flex; flex-direction: column; min-width: 0; font-size: 15px; font-weight: 600; color: var(--pen); line-height: 1.25; }
 .picked .head { color: var(--ink); }
@@ -417,7 +417,7 @@ function go(v) { view = v; armed = null; if (v !== 'workout') toastMsg = ''; ren
 function bodySVG() {
   function m(g, paths) { return '<g class="m' + (picks[g] ? ' on' : '') + '" data-act="pick" data-g="' + g + '" role="button" aria-label="' + GN[g] + '">' + paths + '</g>'; }
   function t(g, x, y, label, anchor) { return '<text class="' + (picks[g] ? 'on' : '') + '" data-act="pick" data-g="' + g + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + label + '</text>'; }
-  return '<svg class="fig" viewBox="-46 0 266 278" aria-label="Body map. Tap the muscle groups you are working.">' +
+  return '<svg class="fig" viewBox="-46 -36 266 314" aria-label="Body map. Tap the muscle groups you are working.">' +
     '<defs><pattern id="hatch" class="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><line x1="0" y1="0" x2="0" y2="5"/></pattern></defs>' +
     '<circle class="o" cx="96" cy="30" r="15"/><path class="o" d="M84 22 Q 92 12 106 16"/>' +
     '<path class="o" d="M106 15 C 120 4, 134 12, 130 28 C 128 40, 134 50, 127 62"/><path class="o" d="M108 18 C 118 14, 126 22, 124 32 C 122 42, 126 50, 122 58"/>' +
@@ -447,10 +447,10 @@ function homeView() {
     '<button class="iconbtn" data-act="go" data-v="settings" aria-label="Settings">⚙︎</button></div>';
   if (S.active) h += '<button class="btn" data-act="go" data-v="workout">Back to your workout →</button>';
   h += '<div class="mid">' + bodySVG() +
-    '<button class="cal' + (picks.cardio ? ' on' : '') + '" data-act="pick" data-g="cardio" aria-label="Days since cardio. Tap to add cardio today.">' +
+    '<button class="cal' + (picks.cardio ? ' on' : '') + '" data-act="pick" data-g="cardio" aria-label="Days since cardio. It goes up by one every day you skip. Tap to add cardio today.">' +
     '<span class="rings"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="head">Days since cardio</span>' +
     '<span class="page" style="display:block"><span class="n" style="display:block">' + (dsc === null ? '–' : dsc) + '</span><span class="small">' + (dsc === 1 ? 'day' : 'days') + '</span></span>' +
-    '<span class="note" style="display:block">Every day you skip cardio, it gets added to the next day</span></button></div>';
+    '</button></div>';
   h += '<div class="picked"><div><span class="head" id="pickhead">Today</span><span id="picklist">' + picksList().map(function (g) { return GN[g]; }).join(' · ') + '</span></div>' +
     '<button class="next" data-act="go" data-v="why">Next →</button></div>';
 
