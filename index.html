@@ -217,7 +217,7 @@ var CN = { machine: 'machine', free: 'free weights', floor: 'floor', rack: 'rack
 var MACHINES = ['Treadmill walk', 'Treadmill run', 'StairMaster', 'Outdoor run'];
 var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-// Road to Christmas: cardio of 20+ minutes in one workout fills a box
+// Road to Antigua (Christmas trip): cardio of 20+ minutes in one workout fills a box
 var ROAD = { start: '2026-10-18', end: '2026-12-25', goal: 40, minMinutes: 20 };
 var REWARDS = [[10, 'Prerolls'], [20, 'New workout set'], [30, 'New bikini'], [40, 'New shoes']];
 
@@ -474,7 +474,7 @@ function homeView() {
   var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
   if ((today.getDate() === 1 || today.getDate() === lastDay) && !(S.photos[month] || {})[today.getDate() === 1 ? 'start' : 'end'])
     h += '<button class="xlink" data-act="wrapped" data-photo="1"><span class="xl">Progress pic day</span><span class="xv">Tap to snap this month\'s ' + (today.getDate() === 1 ? 'start' : 'end') + ' photo</span></button>';
-  h += '<div class="two"><button class="xlink" data-act="go" data-v="road"><span class="xl">Road to Xmas</span><span class="xbar"><i style="width:' + Math.min(100, Math.round(100 * rc / ROAD.goal)) + '%"></i></span><span class="xv">' + rc + '/' + ROAD.goal + ' cardios</span></button>' +
+  h += '<div class="two"><button class="xlink" data-act="go" data-v="road"><span class="xl">Road to Antigua</span><span class="xbar"><i style="width:' + Math.min(100, Math.round(100 * rc / ROAD.goal)) + '%"></i></span><span class="xv">' + rc + '/' + ROAD.goal + ' cardios</span></button>' +
     '<button class="xlink" data-act="wrapped"><span class="xl">' + monthName(month).slice(0, 3) + ' Wrapped</span><span class="xv">' + (today.getDate() === lastDay ? 'ready now' : 'so far this month') + '</span></button></div>';
   h += '<div class="links"><button data-act="go" data-v="history">History</button></div>';
   return h;
@@ -484,7 +484,7 @@ function whyView() {
   var gs = picksList(), n = S.workouts.length, reasons = [];
   gs.forEach(function (g) {
     if (g === 'abs') { reasons.push('Abs go with every workout. Sorry.'); return; }
-    if (g === 'cardio') { reasons.push('Cardio: ' + roadCount() + ' of ' + ROAD.goal + ' boxes filled before Christmas'); return; }
+    if (g === 'cardio') { reasons.push('Cardio: ' + roadCount() + ' of ' + ROAD.goal + ' boxes filled before Antigua'); return; }
     var l = lastFor(g), d = l ? daysBetween(l, new Date()) : null;
     reasons.push(GN[g] + (d === null ? ': first time logging it' : d === 0 ? ': already worked today' : ': last hit ' + plural(d, 'day') + ' ago'));
   });
@@ -519,7 +519,7 @@ function workoutView() {
     h += '<div class="two"><div class="step"><span class="head"><i class="num">3</i>Time</span>' + stepper('minutes', 'min', 1) + '</div>' +
       '<div class="step"><span class="head"><i class="num">4</i>Miles</span>' + stepper('miles', 'mi', 0.1) + '</div></div>';
     h += '<button class="btn" data-act="log">Log cardio ✓</button>';
-    h += '<p class="hint" style="margin:-6px 0 0;text-align:center">' + ROAD.minMinutes + '+ minutes fills a box on your Road to Xmas.</p>';
+    h += '<p class="hint" style="margin:-6px 0 0;text-align:center">' + ROAD.minMinutes + '+ minutes fills a box on your Road to Antigua.</p>';
   } else {
     h += '<div class="step"><span class="head"><i class="num">2</i>What are you using?</span><div class="tiles">' +
       CATS.map(function (c) { return '<button class="tile' + (u.cat === c[0] ? ' on' : '') + '" data-act="cat" data-c="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div></div>';
@@ -569,7 +569,7 @@ function roadView() {
     cells += '<i class="' + (i <= c ? 'on' : '') + (goal ? ' goal' : '') + '">' + (goal ? '★' : i <= c ? i : '') + '</i>';
   }
   var h = '<button class="back" data-act="go" data-v="home">‹ home</button>';
-  h += '<h1>Road to <u>Christmas</u> vacation</h1>';
+  h += '<h1>Road to <u>Antigua</u></h1>';
   h += '<div class="count"><div><b>' + left + '</b><small>DAYS LEFT</small></div><div style="text-align:right"><b>' + c + '/' + ROAD.goal + '</b><small>CARDIOS</small></div></div>';
   h += '<div class="grid">' + cells + '</div>';
   h += '<div class="rewards"><span class="head pen">Your rewards</span><ul>' + REWARDS.map(function (r) {
@@ -637,7 +637,7 @@ function wrappedCards(month) {
   var mc = {}; ws.forEach(function (w) { w.sets.forEach(function (s) { if (s.cat === 'cardio') mc[s.name] = (mc[s.name] || 0) + 1; }); });
   var topM = Object.keys(mc).sort(function (a, b) { return mc[b] - mc[a]; })[0];
   cards.push(['', '<span class="eyebrow">Cardio, somehow</span><div class="big pen">' + cw.length + '</div><p>cardio ' + (cw.length === 1 ? 'session' : 'sessions') +
-    (miles ? '. <b>' + miles + (miles === 1 ? ' mile' : ' miles') + '</b>' + (topM ? ', mostly ' + esc(topM === 'StairMaster' ? 'on the StairMaster' : topM.toLowerCase()) : '') + '.' : '.') + '</p><p class="quip">Road to Xmas: ' + roadCount() + ' of ' + ROAD.goal + ' boxes filled.</p>']);
+    (miles ? '. <b>' + miles + (miles === 1 ? ' mile' : ' miles') + '</b>' + (topM ? ', mostly ' + esc(topM === 'StairMaster' ? 'on the StairMaster' : topM.toLowerCase()) : '') + '.' : '.') + '</p><p class="quip">Road to Antigua: ' + roadCount() + ' of ' + ROAD.goal + ' boxes filled.</p>']);
   var dc = [0, 0, 0, 0, 0, 0, 0]; ws.forEach(function (w) { dc[new Date(w.date).getDay()]++; });
   var dow = dc.indexOf(Math.max.apply(null, dc));
   if (ws.length >= 3) cards.push(['', '<span class="eyebrow">Your gym personality</span><h2>You\'re a <span class="pen">' + DAYS[dow] + '</span> girl.</h2><p>Most of your workouts this month happened on ' + DAYS[dow] + 's.</p>']);
