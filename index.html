@@ -404,8 +404,9 @@ var REWARDS = [[10, 'Prerolls'], [20, 'New workout set'], [30, 'New bikini'], [4
 
 // Muscles that go together
 var SPLITS = [['Leg day', ['glutes', 'quads', 'hamstrings']], ['Push day', ['chest', 'triceps']], ['Pull day', ['back', 'biceps']]];
-// An exercise joins the suggestions once you've logged it in this many workouts
-var KNOWN = 2;
+// An exercise joins the suggestions once you've logged it in this many workouts.
+// Everything you'd logged before suggestions started counts right away.
+var KNOWN = 2, SUGGEST_FROM = '2026-10-27';
 
 // ---------- storage ----------
 // A workout: { id, date, end, groups, stretch, sets: [{ group, cat, name, weight, bw, reps, seconds, minutes, miles }] }
@@ -582,10 +583,10 @@ function candidates(g) {
     w.sets.forEach(function (s) {
       var k = s.name.toLowerCase();
       if (s.group !== g || s.cat === 'cardio' || seen[k]) return;
-      seen[k] = 1; by[k] = by[k] || { name: s.name, cat: s.cat, g: g, times: 0 }; by[k].times++; by[k].date = w.date;
+      seen[k] = 1; by[k] = by[k] || { name: s.name, cat: s.cat, g: g, times: 0, early: midnight(w.date) < localDate(SUGGEST_FROM) }; by[k].times++; by[k].date = w.date;
     });
   });
-  return Object.keys(by).filter(function (k) { return by[k].times >= KNOWN; })
+  return Object.keys(by).filter(function (k) { return by[k].times >= KNOWN || by[k].early; })
     .sort(function (a, b) { return by[b].times - by[a].times || (by[a].date < by[b].date ? 1 : -1); })
     .map(function (k) { return by[k]; });
 }
