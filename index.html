@@ -692,7 +692,7 @@ function homeView() {
   var n = S.workouts.length, dsc = daysSinceCardio(), last = sorted()[n - 1];
   var now = new Date(), toGo = Math.max(0, daysBetween(now, localDate(ROAD.end))), rc = roadCount();
   var h = '<div class="pagedate"><span>' + now.toLocaleDateString('en-US', { weekday: 'long' }) + ' · ' + now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span><i></i></div>';
-  h += '<div class="topbar"><div><h1>Ready to <u>work</u>?' + star() + star(1) + '</h1><p class="pep">' + esc(pepNote(dsc)) + '</p></div>' +
+  h += '<div class="topbar"><div><h1>Ready to <u>work</u>?' + star() + star(1) + '</h1></div>' +
     '<button class="iconbtn" data-act="go" data-v="settings" aria-label="Settings">⚙︎</button></div>';
 
   h += S.active ? '<button class="btn" data-act="go" data-v="workout">Back to your workout →</button>' : '<button class="btn" data-act="go" data-v="pick">Start workout →</button>';
@@ -743,13 +743,6 @@ function pickView() {
   h += '<div class="picked"><div><span class="head" id="pickhead">Today</span><span id="picklist">' + picksList().map(function (g) { return GN[g]; }).join(' · ') + '</span></div>' +
     '<button class="next" data-act="go" data-v="why">Next →</button></div>';
   return h;
-}
-
-function pepNote(dsc) {
-  if (dsc !== null && dsc >= 4) return 'Day ' + dsc + ' with no cardio. Antigua is watching.';
-  var notes = ['Abs. Again. You know the drill.', 'The bikini is at box 30. Just saying.',
-    'Show up, log it, leave cute.', 'You never regret the workout.'];
-  return notes[Math.floor(midnight(new Date()) / 864e5) % notes.length];
 }
 
 function whyView() {
