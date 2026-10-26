@@ -1,6 +1,6 @@
 # WorkUp
 
-A workout logger for iPhone that runs as a website, styled like a black-page bullet journal. You tap the muscle groups you are working on a body map, log each set (weight or body weight, reps or a timer), and log cardio by machine, minutes and miles. After 14 logged workouts it starts suggesting exercises. Cardio of 20+ minutes fills a box on the Road to Antigua tracker, and each month gets a tap-through Wrapped story with progress photos.
+A workout logger for iPhone that runs as a website, with a dreamy lavender look. You tap Start workout, pick the muscle groups you are working on a body map, then log each set (weight or body weight, reps or a timer) or a superset round; each exercise is sorted into a muscle group from its name. Cardio is logged by machine, minutes and miles. After 14 logged workouts it starts suggesting exercises. Cardio of 20+ minutes fills a box on the Road to Antigua tracker, and last month's Wrapped story pops up on the 1st (available until the 3rd).
 
 ## Use it on your iPhone
 
