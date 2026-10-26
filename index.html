@@ -349,7 +349,7 @@ var popPick = null, popSet = -1;   // the muscle or set just added, so only it a
 var stretched = false;
 var armed = null; // two-tap confirmations
 var toastMsg = '';
-var storyIdx = 0, storyMonth = null;
+var storyIdx = 0, storyMonth = null, photoOnly = false;
 
 // ---------- helpers ----------
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -573,8 +573,9 @@ function homeView() {
   var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
   if ((today.getDate() === 1 || today.getDate() === lastDay) && !(S.photos[month] || {})[today.getDate() === 1 ? 'start' : 'end'])
     h += '<button class="xlink" data-act="wrapped" data-photo="1"><span class="xl">Progress pic day</span><span class="xv">Tap to snap this month\'s ' + (today.getDate() === 1 ? 'start' : 'end') + ' photo</span></button>';
-  h += '<div class="two"><button class="xlink" data-act="go" data-v="road"><span class="xl">Road to Antigua</span><span class="xbar"><i style="width:' + Math.min(100, Math.round(100 * rc / ROAD.goal)) + '%"></i></span><span class="xv">' + rc + '/' + ROAD.goal + ' cardios</span></button>' +
-    '<button class="xlink" data-act="wrapped"><span class="xl">' + monthName(month).slice(0, 3) + ' Wrapped</span><span class="xv">' + (today.getDate() === lastDay ? 'ready now' : 'so far this month') + '</span></button></div>';
+  var wm = wrapMonth();
+  h += '<div class="' + (wm ? 'two' : '') + '"><button class="xlink" style="width:100%" data-act="go" data-v="road"><span class="xl">Road to Antigua</span><span class="xbar"><i style="width:' + Math.min(100, Math.round(100 * rc / ROAD.goal)) + '%"></i></span><span class="xv">' + rc + '/' + ROAD.goal + ' cardios</span></button>' +
+    (wm ? '<button class="xlink" data-act="wrapped"><span class="xl">' + monthName(wm).slice(0, 3) + ' Wrapped</span><span class="xv">here until the 3rd</span></button>' : '') + '</div>';
   h += '<div class="links"><button data-act="go" data-v="history">History</button></div>';
   return h;
 }
@@ -760,13 +761,18 @@ function settingsView() {
 }
 
 // ---------- wrapped ----------
+function wrapMonth() {
+  // Last month's Wrapped shows up on the 1st and goes away after the 3rd
+  var d = new Date(); if (d.getDate() > 3) return null;
+  return ym(new Date(d.getFullYear(), d.getMonth() - 1, 15).toISOString());
+}
 function wrappedCards(month) {
   var ws = sorted().filter(function (w) { return ym(w.date) === month; });
   var name = monthName(month), year = month.slice(0, 4), cards = [];
   var mins = ws.reduce(function (t, w) { return t + (w.end ? Math.max(0, (new Date(w.end) - new Date(w.date)) / 60000) : 0); }, 0);
   cards.push(['purple', '<span class="eyebrow">WorkUp Wrapped</span><h2>Your ' + name + ',<br>in the gym.</h2><p>' + (ws.length ? 'You showed up. Let\'s look at what you did.' : 'Nothing logged yet this month. Go make some memories.') + '</p><span class="stamp">' + name.slice(0, 3).toUpperCase() + ' ' + year + '</span>']);
   if (!ws.length) return cards.concat([photoCard(month)]);
-  cards.push(['', '<span class="eyebrow">You worked out</span><div class="big pen">' + ws.length + '</div><p>' + (ws.length === 1 ? 'time' : 'times') + ' this month' +
+  cards.push(['', '<span class="eyebrow">You worked out</span><div class="big pen">' + ws.length + '</div><p>' + (ws.length === 1 ? 'time' : 'times') + ' in ' + name +
     (mins >= 60 ? '. That\'s <b>' + Math.round(mins / 60) + ' hours</b> of lifting, walking and complaining about abs.' : '.') + '</p>']);
   var gc = {}; ws.forEach(function (w) { Object.keys(groupsOf(w)).forEach(function (g) { if (g !== 'abs' && g !== 'cardio') gc[g] = (gc[g] || 0) + 1; }); });
   var top = Object.keys(gc).sort(function (a, b) { return gc[b] - gc[a]; }).slice(0, 5);
@@ -810,7 +816,7 @@ function photoCard(month) {
     '<p class="quip">Tap a polaroid to open your camera. Photos stay on this phone.</p>'];
 }
 function wrappedView() {
-  var cards = wrappedCards(storyMonth);
+  var cards = photoOnly ? [photoCard(storyMonth)] : wrappedCards(storyMonth);
   storyIdx = Math.max(0, Math.min(cards.length - 1, storyIdx));
   var c = cards[storyIdx];
   return '<div class="story ' + c[0] + '" id="story"><div class="bars">' + cards.map(function (x, i) { return '<i class="' + (i <= storyIdx ? 'done' : '') + '"></i>'; }).join('') + '</div>' +
@@ -859,8 +865,10 @@ document.addEventListener('click', function (ev) {
       break;
     case 'stretch': stretched = !stretched; break;
     case 'start': startWorkout(); return;
-    case 'wrapped': storyMonth = ym(new Date().toISOString()); storyIdx = t.dataset.photo ? 99 : 0; go('wrapped');
-      if (t.dataset.photo) { var cs = wrappedCards(storyMonth); storyIdx = cs.length - 2; render(); }
+    case 'wrapped':
+      // Progress pic day opens just the photo card; otherwise last month's Wrapped
+      photoOnly = !!t.dataset.photo; storyMonth = photoOnly ? ym(new Date().toISOString()) : wrapMonth(); storyIdx = 0;
+      if (storyMonth) go('wrapped');
       return;
     case 'cat':
       var sl = slot(t.dataset.s);
@@ -1015,6 +1023,8 @@ function exportData() {
   if (msg) msg.textContent = 'Saved ' + name + '.';
 }
 
+// The first time you open the app on the 1st to the 3rd, last month's Wrapped pops up
+if (wrapMonth() && S.wrapSeen !== wrapMonth() && !S.active) { storyMonth = S.wrapSeen = wrapMonth(); photoOnly = false; view = 'wrapped'; save(); }
 render();
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
