@@ -1,5 +1,5 @@
 // Offline cache: serve the app shell from cache, refresh it in the background.
-var CACHE = 'workup-v12';
+var CACHE = 'workup-v13';
 var FILES = ['./', 'index.html', 'manifest.json', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'quicksand.woff2'];
 
 self.addEventListener('install', function (e) {
@@ -20,6 +20,8 @@ self.addEventListener('fetch', function (e) {
         if (res.ok && new URL(e.request.url).origin === location.origin) c.put(e.request, res.clone());
         return res;
       }).catch(function () { return hit; });
+      // The page itself comes fresh from the network so updates show up on the next open; offline, the cached copy
+      if (e.request.mode === 'navigate') return net.then(function (res) { return res || hit; });
       return hit || net;
     });
   }));
