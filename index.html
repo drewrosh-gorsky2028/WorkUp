@@ -9,15 +9,17 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="WorkUp">
-<meta name="theme-color" content="#fbfaf7">
+<meta name="theme-color" content="#efe6ff">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <style>
-/* White bullet journal pages: charcoal ink, purple gel pen, dot grid. */
+/* Dreamy: lavender gradient, frosted glass cards, purple-to-lilac buttons. */
 @font-face { font-family: 'Quicksand'; font-weight: 400 700; font-display: swap; src: url(quicksand.woff2) format('woff2'); }
 :root {
-  --paper: #fbfaf7; --dot: #d9d6e0; --ink: #2d2b36; --pen: #8456e8; --deep: #ece4ff; --soft: rgba(45, 43, 54, .2);
+  --paper: #f6f0ff; --ink: #3a2a63; --pen: #7c4ee0; --lilac: #b48cff; --mute: #8a76b5; --deep: #e7ddff; --soft: rgba(58, 42, 99, .14);
+  --glass: rgba(255, 255, 255, .62); --rim: rgba(255, 255, 255, .95); --glow: 0 10px 24px rgba(124, 78, 224, .28);
+  --grad: linear-gradient(120deg, #7c4ee0, #b07cf5);
   --hand: 'Quicksand', ui-rounded, -apple-system, system-ui, sans-serif;
   color-scheme: light;
 }
@@ -25,7 +27,7 @@
 html, body { margin: 0; background: var(--paper); color: var(--ink); }
 body {
   font: 500 16px/1.4 var(--hand);
-  background-image: radial-gradient(circle, var(--dot) 1.2px, transparent 1.6px); background-size: 18px 18px; background-position: 9px 9px;
+  background: linear-gradient(170deg, #efe6ff 0%, #f8f2ff 45%, #e7ddff 100%) fixed;
   padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 32px);
   min-height: 100vh;
 }
@@ -261,6 +263,70 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .bigstamp small { display: block; font-size: 14px; letter-spacing: .14em; margin-top: 6px; }
 @keyframes thud { from { transform: rotate(-8deg) scale(2.4); opacity: 0; } }
 @keyframes fadeaway { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
+/* ---------- Dreamy finish: overrides the shared shapes above ---------- */
+h1 { color: var(--ink); }
+h1 u { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.head, .xlink .xl { color: var(--mute); }
+.sub, .muted { color: var(--mute); opacity: 1; }
+.box, .why, .rewards, .spread, .ssbox, .log, .picked, .xlink, .hist {
+  background: var(--glass); border: 1px solid var(--rim); border-radius: 22px; padding: 14px;
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 4px 18px rgba(58, 42, 99, .06); }
+.why { border-style: solid; }
+.btn, .next { border: 0; border-radius: 999px; background: var(--grad); color: #fff; box-shadow: var(--glow); padding: 14px; }
+.next { padding: 10px 18px; }
+.btn:active, .next:active { transform: scale(.98); box-shadow: 0 4px 12px rgba(124, 78, 224, .25); }
+.ghost { border: 1.4px solid rgba(124, 78, 224, .35); background: rgba(255, 255, 255, .5); border-radius: 999px; padding: 11px; }
+.danger { border: 1px solid var(--rim); background: var(--glass); border-radius: 999px; padding: 11px; }
+.iconbtn { background: var(--glass); border: 1px solid var(--rim); color: var(--pen); }
+.chip, .tile, .opt { background: rgba(255, 255, 255, .7); border: 1px solid var(--rim); color: var(--ink); box-shadow: 0 2px 8px rgba(58, 42, 99, .06); opacity: 1; }
+.tile { border-radius: 18px; padding: 12px 6px; }
+.opt { border-style: solid; }
+.chip.on, .tile.on, .opt.on { background: var(--grad); border-color: transparent; color: #fff; box-shadow: var(--glow); }
+.name { background: rgba(255, 255, 255, .7); border: 1px solid var(--rim); border-radius: 14px; padding: 10px 12px; }
+.name:focus { border-color: var(--lilac); }
+.num { border-color: var(--lilac); }
+.stepper { background: rgba(255, 255, 255, .7); border: 1px solid var(--rim); border-radius: 18px; }
+.stepper button { border: 0; background: var(--deep); color: var(--pen); }
+.stepper.flat { color: var(--pen); }
+.timer.run button { background: var(--grad); color: #fff; }
+.setchip { background: rgba(255, 255, 255, .75); border: 1px solid rgba(124, 78, 224, .3); }
+.setchip:active { background: var(--grad); color: #fff; }
+.ex { border-bottom: 1px solid var(--soft); }
+.toast { color: var(--pen); }
+.xbar { background: var(--deep); } .xbar i { background: var(--grad); }
+.links button { color: var(--pen); opacity: 1; text-decoration: none; font-weight: 600; }
+.pagedate i { border-bottom: 0; }
+.pagedate { color: var(--mute); }
+.t-pep .pep { border: 0; padding: 0; transform: none; font-style: italic; color: var(--pen); }
+.banner { clip-path: none; margin-inline: 0; border: 1px solid var(--rim); border-radius: 22px; background: linear-gradient(120deg, rgba(180, 140, 255, .35), rgba(255, 255, 255, .6)); padding: 12px 14px; }
+.banner button { border: 0; background: rgba(255, 255, 255, .85); }
+.banner.done button { background: var(--grad); color: #fff; }
+.picked { border-radius: 22px; }
+.days i { border: 0; background: rgba(255, 255, 255, .85); box-shadow: inset 0 0 0 1.5px #cdb9f6; }
+.days i.on { background: var(--grad); box-shadow: none; }
+.days i.today { outline: 0; box-shadow: inset 0 0 0 2px var(--pen); }
+.hero { border-radius: 24px; background: linear-gradient(140deg, #b48cff, #7446dc); box-shadow: var(--glow); }
+.hero .head { color: rgba(255, 255, 255, .88); }
+.hero .boxes i { border: 0; background: rgba(255, 255, 255, .3); border-radius: 50%; }
+.hero .boxes i.on { background: #fff; }
+.spread { padding: 0; }
+.spread > * + * { border-left: 1px solid var(--rim); }
+.tear .tn, .lastw .lwd { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lastw li b { color: var(--lilac); }
+.grid i { border: 0; background: rgba(255, 255, 255, .7); border-radius: 50%; box-shadow: inset 0 0 0 1.5px #cdb9f6; }
+.grid i.on { background: var(--grad); box-shadow: none; color: #fff; }
+.grid i.goal { box-shadow: inset 0 0 0 2px var(--pen); color: var(--pen); }
+.count b { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.fig .o { stroke: var(--ink); }
+.fig .m.on path { fill: url(#hatch); }
+.fig .hatch line { stroke: var(--lilac); stroke-width: 2.2; }
+.story { background: linear-gradient(170deg, #efe6ff, #f8f2ff 45%, #e7ddff); }
+.story.purple { background: linear-gradient(150deg, #b48cff, #6f3fd8); color: #fff; }
+.story.purple .bars i.done { background: #fff; }
+.story.deep { background: linear-gradient(160deg, #e7ddff, #f6f0ff); }
+.mini div { border: 1px solid rgba(255, 255, 255, .6); border-radius: 18px; background: rgba(255, 255, 255, .15); }
+.stamp { border-radius: 999px; }
+.bigstamp { background: rgba(255, 255, 255, .85); border: 0; border-radius: 26px; box-shadow: var(--glow); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 @media (prefers-reduced-motion: reduce) { .wiggle, .fig .m.pop path, .fig text.pop, .setchip.pop, .bigstamp { animation: none !important; } .burst { display: none; } .btn:active { transform: none; } }
 </style>
 </head>
@@ -650,7 +716,7 @@ function pickView() {
 
 function pepNote(dsc) {
   if (dsc !== null && dsc >= 4) return 'Day ' + dsc + ' with no cardio. Antigua is watching.';
-  var notes = ['Abs. Again. You know the drill.', 'Strong is a personality trait.', 'The bikini is at box 30. Just saying.',
+  var notes = ['Abs. Again. You know the drill.', 'The bikini is at box 30. Just saying.',
     'Show up, log it, leave cute.', 'You never regret the workout.'];
   return notes[Math.floor(midnight(new Date()) / 864e5) % notes.length];
 }
