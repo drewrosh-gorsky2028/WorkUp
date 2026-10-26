@@ -246,7 +246,7 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .t-doodle .why li > span:first-child::before, .t-doodle .rewards li:not(.got) > span:first-child::before { content: '✦'; }
 .t-doodle .why li > span:first-child, .t-doodle .rewards li:not(.got) > span:first-child { font-size: 0; }
 .t-doodle .why li > span:first-child::before, .t-doodle .rewards li:not(.got) > span:first-child::before { font-size: 13px; }
-.t-pep .pep { display: block; align-self: flex-start; margin: 2px 0 -4px; font-size: 14px; font-weight: 600; color: var(--pen); border: 1.6px dashed var(--pen); border-radius: 4px 9px 5px 10px; padding: 4px 10px; transform: rotate(-1.5deg); }
+.t-pep .pep { display: block; width: fit-content; align-self: flex-start; margin: 2px 0 -4px; font-size: 14px; font-weight: 600; color: var(--pen); border: 1.6px dashed var(--pen); border-radius: 4px 9px 5px 10px; padding: 4px 10px; transform: rotate(-1.5deg); }
 .t-motion .fig .m.pop path:not(.line) { animation: scrib .55s ease-out both; }
 @keyframes scrib { from { fill-opacity: 0; stroke-dasharray: 0 320; } to { fill-opacity: 1; stroke-dasharray: 320 0; } }
 .t-motion .fig text.pop { animation: grow .35s ease-out; transform-box: fill-box; transform-origin: center; }
@@ -485,11 +485,13 @@ function logSets(list) {
     var r = logGroups(w.sets)[0].length;
     toastMsg = on('pep') ? ['Round ' + r + '. Double trouble.', 'Round ' + r + ' done. No rest for you.', 'Superset round ' + r + '. Strong.'][r % 3] : 'Logged both! Round ' + r + ' done.';
   } else toastMsg = on('pep') ? ['Set ' + n + '. Look at you.', 'Set ' + n + ' in the book.', 'Set ' + n + ' done. Keep going.', 'That\'s ' + n + '. Strong.'][n % 4] : 'Logged! Set ' + n + ' done.';
+  // The sets you hate get the Antigua thank-you
+  if (list.some(function (x) { return x.group === 'abs' || x.cat === 'cardio'; })) toastMsg = 'Future you in Antigua says thank you.';
   if (s.cat === 'cardio') {
     var mins = cardioMinutes(S.active);
     if (mins >= ROAD.minMinutes && mins - s.minutes < ROAD.minMinutes) {
       var c = before + 1, r = REWARDS.filter(function (x) { return x[0] === c; })[0];
-      toastMsg = r ? 'Box ' + c + ' filled. You unlocked: ' + r[1] + '!' : 'Box ' + c + ' of ' + ROAD.goal + ' filled. One closer to the beach.';
+      toastMsg = r ? 'Box ' + c + ' filled. You unlocked: ' + r[1] + '!' : 'Box ' + c + ' of ' + ROAD.goal + ' filled. Future you in Antigua says thank you.';
     } else if (mins < ROAD.minMinutes) {
       toastMsg = 'Logged. ' + (ROAD.minMinutes - mins) + ' more minutes and it fills a box.';
     }
@@ -596,14 +598,6 @@ function homeView() {
   h += '<div class="topbar"><div><h1>Ready to <u>work</u>?' + star() + star(1) + '</h1><p class="pep">' + esc(pepNote(dsc)) + '</p></div>' +
     '<button class="iconbtn" data-act="go" data-v="settings" aria-label="Settings">⚙︎</button></div>';
 
-  // Road to Antigua: the countdown and every cardio box
-  var boxes = '', next = REWARDS.filter(function (r) { return r[0] > rc; })[0];
-  for (var b = 1; b <= ROAD.goal; b++) boxes += '<i class="' + (b <= rc ? 'on' : '') + '"></i>';
-  h += '<button class="hero" data-act="go" data-v="road"><span class="head">Road to Antigua</span>' +
-    '<span class="count"><b>' + toGo + '</b><span>' + (toGo === 1 ? 'day' : 'days') + ' to go</span></span>' +
-    '<span class="boxes">' + boxes + '</span>' +
-    '<span class="small">' + rc + ' of ' + ROAD.goal + ' cardios' + (next ? ' · next reward at ' + next[0] + ': ' + esc(next[1]) : ' · every reward unlocked!') + '</span></button>';
-
   h += S.active ? '<button class="btn" data-act="go" data-v="workout">Back to your workout →</button>' : '<button class="btn" data-act="go" data-v="pick">Start workout →</button>';
 
   // The journal spread: days since cardio | last workout
@@ -633,6 +627,14 @@ function homeView() {
     h += '<button class="xlink" data-act="wrapped" data-photo="1"><span class="xl">Progress pic day</span><span class="xv">Tap to snap this month\'s ' + (today.getDate() === 1 ? 'start' : 'end') + ' photo</span></button>';
   var wm = wrapMonth();
   if (wm) h += '<button class="xlink" data-act="wrapped"><span class="xl">' + monthName(wm) + ' Wrapped</span><span class="xv">Here until the 3rd</span></button>';
+  // Road to Antigua: the countdown and every cardio box
+  var boxes = '', next = REWARDS.filter(function (r) { return r[0] > rc; })[0];
+  for (var b = 1; b <= ROAD.goal; b++) boxes += '<i class="' + (b <= rc ? 'on' : '') + '"></i>';
+  h += '<button class="hero" data-act="go" data-v="road"><span class="head">Road to Antigua</span>' +
+    '<span class="count"><b>' + toGo + '</b><span>' + (toGo === 1 ? 'day' : 'days') + ' to go</span></span>' +
+    '<span class="boxes">' + boxes + '</span>' +
+    '<span class="small">' + rc + ' of ' + ROAD.goal + ' cardios' + (next ? ' · next reward at ' + next[0] + ': ' + esc(next[1]) : ' · every reward unlocked!') + '</span></button>';
+
   h += '<div class="links"><button data-act="go" data-v="history">History</button></div>';
   return h;
 }
@@ -649,7 +651,7 @@ function pickView() {
 function pepNote(dsc) {
   if (dsc !== null && dsc >= 4) return 'Day ' + dsc + ' with no cardio. Antigua is watching.';
   var notes = ['Abs. Again. You know the drill.', 'Strong is a personality trait.', 'The bikini is at box 30. Just saying.',
-    'Show up, log it, leave cute.', 'Future you in Antigua says thank you.', 'One set at a time.', 'You never regret the workout.'];
+    'Show up, log it, leave cute.', 'One set at a time.', 'You never regret the workout.'];
   return notes[Math.floor(midnight(new Date()) / 864e5) % notes.length];
 }
 
