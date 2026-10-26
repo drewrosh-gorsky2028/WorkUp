@@ -518,22 +518,18 @@ function bodySVG() {
   function t(g, x, y, label, anchor) { return '<text class="' + (picks[g] ? 'on' : '') + (popPick === g ? ' pop' : '') + '" data-act="pick" data-g="' + g + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + label + '</text>'; }
   return '<svg class="fig" viewBox="-46 -36 266 314" aria-label="Body map. Tap the muscle groups you are working.">' +
     '<defs><pattern id="hatch" class="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><line x1="0" y1="0" x2="0" y2="5"/></pattern></defs>' +
-    '<circle class="o" cx="96" cy="30" r="15"/><path class="o" d="M84 22 Q 92 12 106 16"/>' +
-    '<path class="o" d="M106 15 C 120 4, 134 12, 130 28 C 128 40, 134 50, 127 62"/><path class="o" d="M108 18 C 118 14, 126 22, 124 32 C 122 42, 126 50, 122 58"/>' +
-    '<circle class="tie" cx="106" cy="16" r="3"/><path class="o" d="M91 45 L 91 52 M101 45 L 101 52"/>' +
-    '<path class="o" d="M50 94 L 46 126 L 56 128 L 60 96"/><path class="o" d="M142 94 L 146 126 L 136 128 L 132 96"/>' +
-    '<path class="ld" d="M36 80 L 56 80 M156 80 L 136 80 M36 108 L 78 108 M156 106 L 106 106 M156 144 L 124 144 M156 184 L 114 184 M36 184 L 70 184 M36 238 L 78 238"/>' +
-    m('chest', '<path d="M74 56 Q 96 50 118 56 L 120 76 Q 108 88 96 80 Q 84 88 72 76 Z"/>') +
-    m('back', '<path d="M72 76 Q 81 102 75 130 L 85 122 L 84 88 Z"/><path d="M120 76 Q 111 102 117 130 L 107 122 L 108 88 Z"/>') +
-    m('biceps', '<path d="M72 58 Q 60 58 54 68 L 50 94 L 60 96 L 64 74 Z"/>') +
-    m('triceps', '<path d="M120 58 Q 132 58 138 68 L 142 94 L 132 96 L 128 74 Z"/>') +
-    m('abs', '<path d="M84 88 L 108 88 L 107 122 L 85 122 Z"/><path class="line" d="M96 90 L 96 120 M85 99 L 107 99 M85 110 L 107 110"/>') +
-    m('glutes', '<path d="M74 132 Q 96 126 118 132 Q 128 142 126 156 Q 96 150 66 156 Q 64 142 74 132 Z"/>') +
-    m('hamstrings', '<path d="M66 156 Q 66 182 74 206 L 80 206 Q 74 182 76 157 Z"/><path d="M126 156 Q 126 182 118 206 L 112 206 Q 118 182 116 157 Z"/>') +
-    m('quads', '<path d="M76 157 Q 74 182 80 206 L 94 206 L 96 158 Z"/><path d="M116 157 Q 118 182 112 206 L 98 206 L 96 158 Z"/><path class="line" d="M86 166 L 87 198 M106 166 L 105 198"/>') +
-    m('cardio', '<path d="M74 206 Q 74 240 84 270 L 90 270 L 94 206 Z"/><path d="M118 206 Q 118 240 108 270 L 102 270 L 98 206 Z"/>') +
-    t('chest', 96, 72, 'CHEST', 'middle').replace('<text ', '<text style="font-size:11px" ') +
-    t('biceps', 34, 84, 'BI', 'end') + t('triceps', 158, 84, 'TRI') + t('back', 34, 112, 'BACK', 'end') + t('abs', 158, 110, 'ABS') +
+    '<circle class="o" cx="96" cy="30" r="15"/><path class="o" d="M84 22 Q 92 12 106 16"/><path class="o" d="M106 15 C 120 4, 134 12, 130 28 C 128 40, 134 50, 127 62"/><path class="o" d="M108 18 C 118 14, 126 22, 124 32 C 122 42, 126 50, 122 58"/><circle class="tie" cx="106" cy="16" r="3"/><path class="o" d="M91 45 L 91 51 Q 84 54 75 57 M101 45 L101 51 Q108 54 117 57"/><path class="o" d="M75 57 Q 60 54 55 68 Q 54 73 57 75 M117 57 Q132 54 137 68 Q138 73 135 75"/><path class="o" d="M62 76 Q 64 66 75 60 M130 76 Q128 66 117 60"/><path class="o" d="M51 97 Q 44 110 44 124 M60 98 Q 59 112 53 125 M141 97 Q148 110 148 124 M132 98 Q133 112 139 125"/><path class="o" d="M44 124 Q 42 133 47 135 Q 53 134 53 125 M148 124 Q150 133 145 135 Q139 134 139 125"/><path class="o" d="M84 268 Q 79 274 85 277 L 93 277 L 92 268 M108 268 Q113 274 107 277 L99 277 L100 268"/><path class="o" d="M82 127 Q 89 131 96 132 M110 127 Q103 131 96 132"/><path class="o" d="M86 131 Q 92 141 96 146 M106 131 Q100 141 96 146"/>' +
+    '<path class="ld" d="M36 80 L 52 80 M156 80 L 140 80 M36 108 L 79 108 M156 106 L 106 106 M156 144 L 124 144 M156 184 L 116 184 M36 184 L 70 184 M36 238 L 76 238 M36 52 L 80 64"/>' +
+    m('chest', '<path d="M75 59 Q 85 55 95 58 L 95 75 Q 85 81 76 74 Q 72 67 75 59 Z"/><path d="M117 59 Q107 55 97 58 L97 75 Q107 81 116 74 Q120 67 117 59 Z"/>') +
+    m('back', '<path d="M73 76 Q 77 96 82 117 L 86 116 Q 84 98 86 82 Q 79 80 73 76 Z"/><path d="M119 76 Q115 96 110 117 L106 116 Q108 98 106 82 Q113 80 119 76 Z"/>') +
+    m('biceps', '<path d="M57 75 Q 50 85 51 97 L 60 98 Q 65 86 62 76 Q 60 74 57 75 Z"/><path class="line" d="M56 82 Q 55 89 56 95"/>') +
+    m('triceps', '<path d="M135 75 Q142 85 141 97 L132 98 Q127 86 130 76 Q132 74 135 75 Z"/><path class="line" d="M134 80 Q136 88 135 95"/>') +
+    m('abs', '<path d="M88 82 L 95 83 L 95 92 L 88 92 Q 87 92 87 91 L 87 83 Q 87 82 88 82 Z"/><path d="M104 82 L97 83 L97 92 L104 92 Q105 92 105 91 L105 83 Q105 82 104 82 Z"/><path d="M88 94 L 95 95 L 95 104 L 88 104 Q 87 104 87 103 L 87 95 Q 87 94 88 94 Z"/><path d="M104 94 L97 95 L97 104 L104 104 Q105 104 105 103 L105 95 Q105 94 104 94 Z"/><path d="M88 106 L 95 107 L 95 115 L 88 115 Q 87 115 87 114 L 87 107 Q 87 106 88 106 Z"/><path d="M104 106 L97 107 L97 115 L104 115 Q105 115 105 114 L105 107 Q105 106 104 106 Z"/><path d="M88 117 L 95 118 L 95 127 Q 90 124 88 117 Z"/><path d="M104 117 L97 118 L97 127 Q102 124 104 117 Z"/>') +
+    m('glutes', '<path d="M82 120 Q 69 128 65 151 Q 70 154 75 155 Q 77 138 86 127 Z"/><path d="M110 120 Q123 128 127 151 Q122 154 117 155 Q115 138 106 127 Z"/>') +
+    m('hamstrings', '<path d="M65 152 Q 60 174 71 204 L 77 205 Q 71 180 75 156 Z"/><path d="M127 152 Q132 174 121 204 L115 205 Q121 180 117 156 Z"/>') +
+    m('quads', '<path d="M75 156 Q 84 149 95 153 Q 97 182 93 205 Q 86 209 78 205 Q 71 182 75 156 Z"/><path d="M117 156 Q108 149 97 153 Q95 182 99 205 Q106 209 114 205 Q121 182 117 156 Z"/><path class="line" d="M84 164 Q 82 186 86 202 M90 186 Q 94 196 91 204"/><path class="line" d="M108 164 Q110 186 106 202 M102 186 Q98 196 101 204"/>') +
+    m('cardio', '<path d="M79 211 Q 71 232 78 252 L 84 268 L 92 268 Q 96 244 93 211 Q 86 207 79 211 Z"/><path d="M113 211 Q121 232 114 252 L108 268 L100 268 Q96 244 99 211 Q106 207 113 211 Z"/><path class="line" d="M86 222 Q 84 236 86 250"/><path class="line" d="M106 222 Q108 236 106 250"/>') +
+        t('chest', 34, 56, 'CHEST', 'end') + t('biceps', 34, 84, 'BI', 'end') + t('triceps', 158, 84, 'TRI') + t('back', 34, 112, 'BACK', 'end') + t('abs', 158, 110, 'ABS') +
     t('glutes', 158, 148, 'GLUTE') + t('quads', 158, 188, 'QUAD') + t('hamstrings', 34, 188, 'HAMSTRING', 'end') + t('cardio', 34, 242, 'CARDIO', 'end') +
     '</svg>';
 }
