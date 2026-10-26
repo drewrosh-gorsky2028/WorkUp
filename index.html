@@ -118,6 +118,26 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .banner button { font-weight: 700; font-size: 14px; background: transparent; color: var(--pen); border: 1.6px solid var(--pen); border-radius: 999px; padding: 5px 12px; flex: none; }
 .banner.done button { background: var(--pen); color: var(--paper); }
 
+/* home: Antigua countdown + journal spread */
+.hero { display: flex; flex-direction: column; gap: 8px; text-align: left; background: var(--pen); color: #fff; border: 0; border-radius: 6px 12px 8px 14px; padding: 14px 16px; box-shadow: 4px 4px 0 var(--ink); }
+.hero .count { display: flex; flex-direction: row; justify-content: flex-start; align-items: baseline; gap: 10px; }
+.hero .count b { color: #fff; font-size: 64px; line-height: .95; font-variant-numeric: tabular-nums; }
+.hero .count span { font-size: 18px; font-weight: 700; }
+.hero .boxes { display: grid; grid-template-columns: repeat(20, 1fr); gap: 3px; }
+.hero .boxes i { aspect-ratio: 1; border: 1.2px solid rgba(255, 255, 255, .75); border-radius: 2px; }
+.hero .boxes i.on { background: #fff; }
+.spread { display: grid; grid-template-columns: 1fr 1fr; border: 1.6px solid var(--ink); border-radius: 4px 9px 5px 10px; }
+.spread > * { padding: 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.spread > * + * { border-left: 1.6px dashed var(--ink); }
+.tear { background: transparent; border: 0; text-align: center; align-items: center; }
+.tear .tn { font-size: 60px; line-height: 1; font-weight: 700; color: var(--pen); font-variant-numeric: tabular-nums; }
+.lastw .lwd { font-weight: 700; font-size: 17px; color: var(--pen); }
+.lastw ul { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 14px; }
+.lastw li { display: flex; gap: 6px; }
+.lastw li b { color: var(--pen); flex: none; font-size: 12px; }
+.box.week { gap: 8px; }
+.box.week .days i { width: 22px; height: 22px; }
+
 /* why today */
 .why { border: 1.6px dashed var(--pen); border-radius: 6px; padding: 10px 12px; font-size: 15px; line-height: 1.35; }
 .why ul, .log ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
@@ -571,11 +591,31 @@ function picksList() { return GROUPS.map(function (g) { return g[0]; }).filter(f
 
 function homeView() {
   var n = S.workouts.length, dsc = daysSinceCardio(), last = sorted()[n - 1];
-  var now = new Date(), toGo = Math.max(0, daysBetween(now, localDate(ROAD.end)));
-  var h = '<div class="pagedate"><span>' + now.toLocaleDateString('en-US', { weekday: 'short' }) + ' · ' + now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span><i></i><span><b>' + toGo + '</b> days to Antigua</span></div>';
+  var now = new Date(), toGo = Math.max(0, daysBetween(now, localDate(ROAD.end))), rc = roadCount();
+  var h = '<div class="pagedate"><span>' + now.toLocaleDateString('en-US', { weekday: 'long' }) + ' · ' + now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span><i></i></div>';
   h += '<div class="topbar"><div><h1>Ready to <u>work</u>?' + star() + star(1) + '</h1><p class="pep">' + esc(pepNote(dsc)) + '</p></div>' +
     '<button class="iconbtn" data-act="go" data-v="settings" aria-label="Settings">⚙︎</button></div>';
+
+  // Road to Antigua: the countdown and every cardio box
+  var boxes = '', next = REWARDS.filter(function (r) { return r[0] > rc; })[0];
+  for (var b = 1; b <= ROAD.goal; b++) boxes += '<i class="' + (b <= rc ? 'on' : '') + '"></i>';
+  h += '<button class="hero" data-act="go" data-v="road"><span class="head">Road to Antigua</span>' +
+    '<span class="count"><b>' + toGo + '</b><span>' + (toGo === 1 ? 'day' : 'days') + ' to go</span></span>' +
+    '<span class="boxes">' + boxes + '</span>' +
+    '<span class="small">' + rc + ' of ' + ROAD.goal + ' cardios' + (next ? ' · next reward at ' + next[0] + ': ' + esc(next[1]) : ' · every reward unlocked!') + '</span></button>';
+
   h += S.active ? '<button class="btn" data-act="go" data-v="workout">Back to your workout →</button>' : '<button class="btn" data-act="go" data-v="pick">Start workout →</button>';
+
+  // The journal spread: days since cardio | last workout
+  var lastCardio = sorted().filter(function (w) { return cardioMinutes(w) > 0; }).pop();
+  var lastList = last ? Object.keys(groupsOf(last)).map(function (g) {
+    return '<li><b>✦</b><span>' + GN[g] + (g === 'cardio' ? ', ' + cardioMinutes(last) + ' min' : '') + '</span></li>';
+  }).join('') : '';
+  h += '<div class="spread"><button class="tear" data-act="cardio" aria-label="Days since cardio. Tap to start a workout with cardio."><span class="head">Days since cardio</span>' +
+    '<span class="tn">' + (dsc === null ? '–' : dsc) + '</span><span class="small muted">' + (lastCardio ? (dsc === 0 ? 'Done today!' : DAYS[new Date(lastCardio.date).getDay()] + ' was the last') : 'None logged yet') + '</span></button>' +
+    '<div class="lastw"><span class="head">Last workout</span>' + (last
+      ? '<span class="lwd">' + fmtDate(last.date) + '</span><ul>' + lastList + '</ul>'
+      : '<span class="small muted">None yet</span>') + '</div></div>';
 
   var start = midnight(new Date()); start.setDate(start.getDate() - start.getDay());
   var thisWeek = 0, dots = '';
@@ -585,22 +625,14 @@ function homeView() {
     if (did) thisWeek++;
     dots += '<span><i class="' + (did ? 'on' : '') + (daysBetween(d, new Date()) === 0 ? ' today' : '') + '"></i>' + 'SMTWTFS'[i] + '</span>';
   }
-  h += '<div class="two"><button class="cal static" data-act="cardio" aria-label="Days since cardio. It goes up by one every day you skip. Tap to start a workout with cardio.">' +
-    '<span class="rings"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="head">Days since cardio</span>' +
-    '<span class="page" style="display:block"><span class="n" style="display:block">' + (dsc === null ? '–' : dsc) + '</span><span class="small">' + (dsc === 1 ? 'day' : 'days') + '</span></span></button>' +
-    '<div class="box"><span class="head">Last workout</span>' + (last
-    ? '<span class="date">' + mdy(last.date) + '</span><span class="small">Muscle group: <b class="pen">' + Object.keys(groupsOf(last)).map(function (g) { return GN[g]; }).join(' + ') + '</b></span>'
-    : '<span class="small muted">None yet</span>') + '</div></div>' +
-    '<div class="box"><div class="days">' + dots + '</div><div class="counts"><div><b>' + thisWeek + '</b><small>this week</small></div>' +
-    '<div style="text-align:right"><b>' + n + '</b><small>in total</small></div></div></div>';
+  h += '<div class="box week"><div class="topbar"><span class="head">This week · ' + thisWeek + ' of 7</span><span class="small muted">' + plural(n, 'workout') + ' in total</span></div><div class="days">' + dots + '</div></div>';
 
-  var rc = roadCount(), month = ym(new Date().toISOString()), today = new Date();
+  var month = ym(new Date().toISOString()), today = new Date();
   var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
   if ((today.getDate() === 1 || today.getDate() === lastDay) && !(S.photos[month] || {})[today.getDate() === 1 ? 'start' : 'end'])
     h += '<button class="xlink" data-act="wrapped" data-photo="1"><span class="xl">Progress pic day</span><span class="xv">Tap to snap this month\'s ' + (today.getDate() === 1 ? 'start' : 'end') + ' photo</span></button>';
   var wm = wrapMonth();
-  h += '<div class="' + (wm ? 'two' : '') + '"><button class="xlink" style="width:100%" data-act="go" data-v="road"><span class="xl">Road to Antigua</span><span class="xbar"><i style="width:' + Math.min(100, Math.round(100 * rc / ROAD.goal)) + '%"></i></span><span class="xv">' + rc + '/' + ROAD.goal + ' cardios</span></button>' +
-    (wm ? '<button class="xlink" data-act="wrapped"><span class="xl">' + monthName(wm).slice(0, 3) + ' Wrapped</span><span class="xv">here until the 3rd</span></button>' : '') + '</div>';
+  if (wm) h += '<button class="xlink" data-act="wrapped"><span class="xl">' + monthName(wm) + ' Wrapped</span><span class="xv">Here until the 3rd</span></button>';
   h += '<div class="links"><button data-act="go" data-v="history">History</button></div>';
   return h;
 }
