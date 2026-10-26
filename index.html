@@ -7,19 +7,19 @@
 <meta name="description" content="Log workouts on your phone and get suggestions for what to train next.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="WorkUp">
-<meta name="theme-color" content="#1a1a1f">
+<meta name="theme-color" content="#fbfaf7">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <style>
-/* Black bullet journal pages: silver ink, purple gel pen, dot grid. */
+/* White bullet journal pages: charcoal ink, purple gel pen, dot grid. */
 @font-face { font-family: 'Quicksand'; font-weight: 400 700; font-display: swap; src: url(quicksand.woff2) format('woff2'); }
 :root {
-  --paper: #1a1a1f; --dot: #36363e; --ink: #d9dbe3; --pen: #b48cff; --deep: #2a1d4d; --soft: rgba(217, 219, 227, .22);
+  --paper: #fbfaf7; --dot: #d9d6e0; --ink: #2d2b36; --pen: #8456e8; --deep: #ece4ff; --soft: rgba(45, 43, 54, .2);
   --hand: 'Quicksand', ui-rounded, -apple-system, system-ui, sans-serif;
-  color-scheme: dark;
+  color-scheme: light;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 html, body { margin: 0; background: var(--paper); color: var(--ink); }
@@ -34,7 +34,7 @@ main { max-width: 480px; margin: 0 auto; padding: 18px max(18px, env(safe-area-i
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible, label:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 h1 { margin: 0; font-size: 30px; line-height: 1.1; font-weight: 700; letter-spacing: -.01em; text-wrap: balance; }
-h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(180, 140, 255, .6) 62% 92%, transparent 92%); }
+h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(180, 140, 255, .45) 62% 92%, transparent 92%); }
 .sub { margin: 4px 0 0; font-size: 16px; opacity: .85; }
 .head { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
 .box { border: 1.6px solid var(--ink); border-radius: 4px 9px 5px 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -49,7 +49,7 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
 .ghost { font-weight: 700; color: var(--pen); background: transparent; border: 1.6px dashed var(--pen); border-radius: 6px; padding: 9px; width: 100%; }
 .ghost:disabled { opacity: .35; }
-.danger { background: transparent; border: 1.6px solid var(--soft); border-radius: 6px; padding: 9px; width: 100%; color: #ff9b9b; font-weight: 600; }
+.danger { background: transparent; border: 1.6px solid var(--soft); border-radius: 6px; padding: 9px; width: 100%; color: #d43d5c; font-weight: 600; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip, .tile { font-weight: 600; font-size: 15px; background: transparent; border: 1.6px solid var(--ink); border-radius: 999px; padding: 5px 13px; }
 .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -211,15 +211,11 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .hist .when { font-weight: 700; color: var(--pen); }
 .empty { text-align: center; padding: 24px 8px; opacity: .7; }
 /* little touches: each is switched on by a class on <body> */
-.pagedate, .tape, .pep, .star { display: none; }
+.pagedate, .pep, .star { display: none; }
 .t-date .pagedate { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; margin-bottom: -8px; }
 .pagedate i { flex: 1; border-bottom: 1.6px dotted var(--soft); }
 .pagedate b { color: var(--pen); }
 .box, .why, .rewards { position: relative; }
-.t-tape .tape { display: block; position: absolute; top: -9px; left: -10px; width: 56px; height: 17px; pointer-events: none; transform: rotate(-9deg);
-  background: repeating-linear-gradient(-45deg, rgba(180, 140, 255, .62) 0 5px, rgba(180, 140, 255, .4) 5px 10px);
-  clip-path: polygon(0 8%, 6% 0, 12% 10%, 18% 0, 82% 0, 88% 10%, 94% 0, 100% 8%, 100% 92%, 94% 100%, 88% 90%, 82% 100%, 18% 100%, 12% 90%, 6% 100%, 0 92%); }
-.t-tape .tape.r { left: auto; right: -10px; transform: rotate(8deg); background: repeating-linear-gradient(45deg, rgba(217, 219, 227, .5) 0 5px, rgba(217, 219, 227, .3) 5px 10px); }
 .t-doodle .star { display: inline-block; width: .5em; height: .5em; fill: var(--pen); vertical-align: top; margin-left: 2px; }
 .t-doodle .star.sm { width: .32em; height: .32em; margin-left: 0; vertical-align: super; opacity: .8; }
 .t-doodle .why li > span:first-child::before, .t-doodle .rewards li:not(.got) > span:first-child::before { content: '✦'; }
@@ -235,7 +231,7 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .burst { position: fixed; z-index: 30; pointer-events: none; color: var(--pen); font-size: 16px; line-height: 1; animation: fly .7s ease-out forwards; }
 @keyframes fly { from { transform: translate(-50%, -50%) scale(.4); opacity: 1; } to { transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1); opacity: 0; } }
 .stampover { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; pointer-events: none; animation: fadeaway 2.6s ease-in forwards; }
-.bigstamp { border: 4px solid var(--pen); color: var(--pen); border-radius: 10px; padding: 10px 22px 8px; text-align: center; background: rgba(26, 26, 31, .85);
+.bigstamp { border: 4px solid var(--pen); color: var(--pen); border-radius: 10px; padding: 10px 22px 8px; text-align: center; background: rgba(251, 250, 247, .92);
   font-size: 52px; font-weight: 700; letter-spacing: .06em; line-height: 1; transform: rotate(-8deg); animation: thud .45s cubic-bezier(.2, 1.4, .4, 1) both; }
 .bigstamp small { display: block; font-size: 14px; letter-spacing: .14em; margin-top: 6px; }
 @keyframes thud { from { transform: rotate(-8deg) scale(2.4); opacity: 0; } }
@@ -243,7 +239,7 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 @media (prefers-reduced-motion: reduce) { .wiggle, .fig .m.pop path, .fig text.pop, .setchip.pop, .bigstamp { animation: none !important; } .burst { display: none; } .btn:active { transform: none; } }
 </style>
 </head>
-<body class="t-date t-tape t-doodle t-motion t-pep t-stamp">
+<body class="t-date t-doodle t-motion t-pep t-stamp">
 <main id="app"></main>
 <script>
 (function () {
@@ -366,7 +362,6 @@ function mdy(iso) { var d = new Date(iso); return (d.getMonth() + 1) + '/' + d.g
 function fmtDate(iso) { return new Date(iso).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); }
 function ym(iso) { var d = new Date(iso); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
 function star(sm) { return '<svg class="star' + (sm ? ' sm' : '') + '" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0 Q9 7 16 8 Q9 9 8 16 Q7 9 0 8 Q7 7 8 0Z"/></svg>'; }
-function tape(r) { return '<span class="tape' + (r ? ' r' : '') + '" aria-hidden="true"></span>'; }
 function on(t) { return document.body.classList.contains('t-' + t); }
 function monthName(key) { var p = key.split('-'); return new Date(+p[0], +p[1] - 1, 1).toLocaleDateString(undefined, { month: 'long' }); }
 function mmss(n) { return Math.floor(n / 60) + ':' + ('0' + n % 60).slice(-2); }
@@ -568,10 +563,10 @@ function homeView() {
     if (did) thisWeek++;
     dots += '<span><i class="' + (did ? 'on' : '') + (daysBetween(d, new Date()) === 0 ? ' today' : '') + '"></i>' + 'SMTWTFS'[i] + '</span>';
   }
-  h += '<div class="two"><div class="box">' + tape() + '<span class="head">Last workout</span>' + (last
+  h += '<div class="two"><div class="box"><span class="head">Last workout</span>' + (last
     ? '<span class="date">' + mdy(last.date) + '</span><span class="small">Muscle group: <b class="pen">' + Object.keys(groupsOf(last)).map(function (g) { return GN[g]; }).join(' + ') + '</b></span>'
     : '<span class="small muted">None yet</span>') + '</div>' +
-    '<div class="box">' + tape(1) + '<div class="days">' + dots + '</div><div class="counts"><div><b>' + thisWeek + '</b><small>this week</small></div>' +
+    '<div class="box"><div class="days">' + dots + '</div><div class="counts"><div><b>' + thisWeek + '</b><small>this week</small></div>' +
     '<div style="text-align:right"><b>' + n + '</b><small>in total</small></div></div></div></div>';
 
   var rc = roadCount(), month = ym(new Date().toISOString()), today = new Date();
@@ -610,7 +605,7 @@ function whyView() {
   var h = '<button class="back" data-act="go" data-v="home">‹ back</button>';
   h += '<div><h1><u>' + GN[gs[0]] + '</u>' + (gs.length > 1 ? ' + ' + gs.slice(1).map(function (g) { return GN[g]; }).join(' + ') : '') + '</h1>' +
     '<p class="sub">Here\'s why these make sense today</p></div>';
-  h += '<div class="why">' + tape() + '<span class="head pen">Why today</span><ul>' + reasons.map(function (r) { return '<li><span>•</span><span>' + esc(r) + '</span></li>'; }).join('') + '</ul></div>';
+  h += '<div class="why"><span class="head pen">Why today</span><ul>' + reasons.map(function (r) { return '<li><span>•</span><span>' + esc(r) + '</span></li>'; }).join('') + '</ul></div>';
   if (n < COLLECT) h += '<p class="small muted" style="margin:0">Getting to know you: ' + n + ' of ' + COLLECT + ' workouts logged. Exercise ideas start after ' + COLLECT + '.</p>';
   h += '<div class="banner' + (stretched ? ' done' : '') + '"><div><b>STRETCH FIRST</b><span>' + (stretched ? 'Nice. Your body thanks you' : 'A few minutes before you start') + '</span></div>' +
     '<button data-act="stretch">' + (stretched ? 'Stretched ✓' : 'Done ✓') + '</button></div>';
@@ -730,7 +725,7 @@ function roadView() {
   h += '<h1>Road to <u>Antigua</u>' + star() + star(1) + '</h1>';
   h += '<div class="count"><div><b>' + left + '</b><small>DAYS LEFT</small></div><div style="text-align:right"><b>' + c + '/' + ROAD.goal + '</b><small>CARDIOS</small></div></div>';
   h += '<div class="grid">' + cells + '</div>';
-  h += '<div class="rewards">' + tape(1) + '<span class="head pen">Your rewards</span><ul>' + REWARDS.map(function (r) {
+  h += '<div class="rewards"><span class="head pen">Your rewards</span><ul>' + REWARDS.map(function (r) {
     var got = c >= r[0];
     return '<li class="' + (got ? 'got' : '') + '"><span>' + (got ? '×' : '☆') + '</span><span>' + esc(r[1]) + '</span><em>' + (got ? 'unlocked' : r[0] + ' cardios') + '</em></li>';
   }).join('') + '</ul></div>';
