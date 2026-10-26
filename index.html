@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="WorkUp">
-<meta name="theme-color" content="#efe6ff">
+<meta name="theme-color" content="#f6f7f9">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -17,9 +17,9 @@
 /* Dreamy: lavender gradient, frosted glass cards, purple-to-lilac buttons. */
 @font-face { font-family: 'Quicksand'; font-weight: 400 700; font-display: swap; src: url(quicksand.woff2) format('woff2'); }
 :root {
-  --paper: #f6f0ff; --ink: #3a2a63; --pen: #7c4ee0; --lilac: #b48cff; --mute: #8a76b5; --deep: #e7ddff; --soft: rgba(58, 42, 99, .14);
-  --glass: rgba(255, 255, 255, .62); --rim: rgba(255, 255, 255, .95); --glow: 0 10px 24px rgba(124, 78, 224, .28);
-  --grad: linear-gradient(120deg, #7c4ee0, #b07cf5);
+  --paper: #f4f5f7; --ink: #14171f; --pen: #1f5eff; --lilac: #4fa3ff; --mute: #6b7280; --deep: #eceef2; --soft: rgba(20, 23, 31, .14);
+  --glass: rgba(255, 255, 255, .62); --rim: rgba(255, 255, 255, .95); --glow: 0 10px 24px rgba(31, 94, 255, .28);
+  --grad: linear-gradient(120deg, #1f5eff, #38b6ff);
   --hand: 'Quicksand', ui-rounded, -apple-system, system-ui, sans-serif;
   color-scheme: light;
 }
@@ -27,7 +27,7 @@
 html, body { margin: 0; background: var(--paper); color: var(--ink); }
 body {
   font: 500 16px/1.4 var(--hand);
-  background: linear-gradient(170deg, #efe6ff 0%, #f8f2ff 45%, #e7ddff 100%) fixed;
+  background: linear-gradient(170deg, #f6f7f9 0%, #ffffff 45%, #eceef2 100%) fixed;
   padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 32px);
   min-height: 100vh;
 }
@@ -36,7 +36,7 @@ main { max-width: 480px; margin: 0 auto; padding: 18px max(18px, env(safe-area-i
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible, label:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 h1 { margin: 0; font-size: 30px; line-height: 1.1; font-weight: 700; letter-spacing: -.01em; text-wrap: balance; }
-h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(180, 140, 255, .45) 62% 92%, transparent 92%); }
+h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(79, 163, 255, .45) 62% 92%, transparent 92%); }
 .sub { margin: 4px 0 0; font-size: 16px; opacity: .85; }
 .head { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
 .box { border: 1.6px solid var(--ink); border-radius: 4px 9px 5px 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -111,7 +111,7 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .xbar i { display: block; height: 100%; background: var(--pen); }
 .links { display: flex; justify-content: center; gap: 18px; font-size: 13px; }
 .links button { background: none; border: 0; opacity: .7; text-decoration: underline; text-underline-offset: 3px; padding: 6px; }
-.banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: rgba(180, 140, 255, .22);
+.banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: rgba(79, 163, 255, .22);
   border-top: 1.6px solid var(--pen); border-bottom: 1.6px solid var(--pen); margin-inline: -18px; padding: 10px 24px;
   clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 50%, 100% 100%, 0 100%, 10px 50%); }
 .banner > div { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
@@ -166,7 +166,7 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .tile.wide { grid-column: span 2; }
 .ghint { min-height: 18px; display: flex; flex-direction: column; gap: 6px; }
 .linkbtn { background: none; border: 0; padding: 2px 0; font-size: 12px; color: var(--pen); text-decoration: underline; text-underline-offset: 3px; }
-.ssbox { border: 1.6px solid var(--pen); border-radius: 4px 9px 5px 10px; padding: 10px; display: flex; flex-direction: column; gap: 10px; background: rgba(180, 140, 255, .06); }
+.ssbox { border: 1.6px solid var(--pen); border-radius: 4px 9px 5px 10px; padding: 10px; display: flex; flex-direction: column; gap: 10px; background: rgba(79, 163, 255, .06); }
 .ssbox .chip { font-size: 13px; padding: 4px 10px; }
 .sshead { display: flex; align-items: center; justify-content: space-between; }
 .exhead em.ss { color: var(--pen); font-weight: 700; opacity: 1; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
@@ -233,6 +233,28 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .pol b { text-align: center; font-size: 13px; }
 .taphint { text-align: center; font-size: 12px; opacity: .6; padding-bottom: 14px; }
 
+/* stats */
+.tiles4 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sn { font-size: 30px; line-height: 1.1; font-weight: 700; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; font-variant-numeric: tabular-nums; }
+.chartbox { gap: 8px; }
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.chart .base { stroke: var(--soft); stroke-width: 1; }
+.chart .grid { stroke: var(--soft); stroke-width: 1; stroke-dasharray: 2 4; }
+.chart .bar { fill: #9cc0ff; }
+.chart .bar.hi { fill: var(--pen); }
+.chart .val { font: 700 12px var(--hand); fill: var(--ink); }
+.chart .tick { font: 600 10px var(--hand); fill: var(--mute); }
+.chart .ln { fill: none; stroke: var(--pen); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .area { fill: rgba(79, 163, 255, .18); }
+.chart .dot { fill: var(--pen); stroke: #fff; stroke-width: 2; }
+.chart .dot.hi { fill: #fff; stroke: var(--pen); stroke-width: 2.5; }
+.hbars { display: flex; flex-direction: column; gap: 7px; }
+.hrow { display: grid; grid-template-columns: 92px 1fr 52px; align-items: center; gap: 8px; font-size: 14px; }
+.hl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ht { height: 12px; border-radius: 6px; background: rgba(213, 216, 222, .35); overflow: hidden; }
+.ht i { display: block; height: 100%; border-radius: 6px; background: var(--grad); }
+.hv { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+
 /* history + settings */
 .hist { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
 .hist .when { font-weight: 700; color: var(--pen); }
@@ -270,15 +292,15 @@ h1 u { background: var(--grad); -webkit-background-clip: text; background-clip: 
 .sub, .muted { color: var(--mute); opacity: 1; }
 .box, .why, .rewards, .spread, .ssbox, .log, .picked, .xlink, .hist {
   background: var(--glass); border: 1px solid var(--rim); border-radius: 22px; padding: 14px;
-  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 4px 18px rgba(58, 42, 99, .06); }
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 4px 18px rgba(20, 23, 31, .06); }
 .why { border-style: solid; }
 .btn, .next { border: 0; border-radius: 999px; background: var(--grad); color: #fff; box-shadow: var(--glow); padding: 14px; }
 .next { padding: 10px 18px; }
-.btn:active, .next:active { transform: scale(.98); box-shadow: 0 4px 12px rgba(124, 78, 224, .25); }
-.ghost { border: 1.4px solid rgba(124, 78, 224, .35); background: rgba(255, 255, 255, .5); border-radius: 999px; padding: 11px; }
+.btn:active, .next:active { transform: scale(.98); box-shadow: 0 4px 12px rgba(31, 94, 255, .25); }
+.ghost { border: 1.4px solid rgba(31, 94, 255, .35); background: rgba(255, 255, 255, .5); border-radius: 999px; padding: 11px; }
 .danger { border: 1px solid var(--rim); background: var(--glass); border-radius: 999px; padding: 11px; }
 .iconbtn { background: var(--glass); border: 1px solid var(--rim); color: var(--pen); }
-.chip, .tile, .opt { background: rgba(255, 255, 255, .7); border: 1px solid var(--rim); color: var(--ink); box-shadow: 0 2px 8px rgba(58, 42, 99, .06); opacity: 1; }
+.chip, .tile, .opt { background: rgba(255, 255, 255, .7); border: 1px solid var(--rim); color: var(--ink); box-shadow: 0 2px 8px rgba(20, 23, 31, .06); opacity: 1; }
 .tile { border-radius: 18px; padding: 12px 6px; }
 .opt { border-style: solid; }
 .chip.on, .tile.on, .opt.on { background: var(--grad); border-color: transparent; color: #fff; box-shadow: var(--glow); }
@@ -289,7 +311,7 @@ h1 u { background: var(--grad); -webkit-background-clip: text; background-clip: 
 .stepper button { border: 0; background: var(--deep); color: var(--pen); }
 .stepper.flat { color: var(--pen); }
 .timer.run button { background: var(--grad); color: #fff; }
-.setchip { background: rgba(255, 255, 255, .75); border: 1px solid rgba(124, 78, 224, .3); }
+.setchip { background: rgba(255, 255, 255, .75); border: 1px solid rgba(31, 94, 255, .3); }
 .setchip:active { background: var(--grad); color: #fff; }
 .ex { border-bottom: 1px solid var(--soft); }
 .toast { color: var(--pen); }
@@ -298,14 +320,14 @@ h1 u { background: var(--grad); -webkit-background-clip: text; background-clip: 
 .pagedate i { border-bottom: 0; }
 .pagedate { color: var(--mute); }
 .t-pep .pep { border: 0; padding: 0; transform: none; font-style: italic; color: var(--pen); }
-.banner { clip-path: none; margin-inline: 0; border: 1px solid var(--rim); border-radius: 22px; background: linear-gradient(120deg, rgba(180, 140, 255, .35), rgba(255, 255, 255, .6)); padding: 12px 14px; }
+.banner { clip-path: none; margin-inline: 0; border: 1px solid var(--rim); border-radius: 22px; background: linear-gradient(120deg, rgba(79, 163, 255, .35), rgba(255, 255, 255, .6)); padding: 12px 14px; }
 .banner button { border: 0; background: rgba(255, 255, 255, .85); }
 .banner.done button { background: var(--grad); color: #fff; }
 .picked { border-radius: 22px; }
-.days i { border: 0; background: rgba(255, 255, 255, .85); box-shadow: inset 0 0 0 1.5px #cdb9f6; }
+.days i { border: 0; background: rgba(255, 255, 255, .85); box-shadow: inset 0 0 0 1.5px #d5d8de; }
 .days i.on { background: var(--grad); box-shadow: none; }
 .days i.today { outline: 0; box-shadow: inset 0 0 0 2px var(--pen); }
-.hero { border-radius: 24px; background: linear-gradient(140deg, #b48cff, #7446dc); box-shadow: var(--glow); }
+.hero { border-radius: 24px; background: linear-gradient(140deg, #4fa3ff, #1848d6); box-shadow: var(--glow); }
 .hero .head { color: rgba(255, 255, 255, .88); }
 .hero .boxes i { border: 0; background: rgba(255, 255, 255, .3); border-radius: 50%; }
 .hero .boxes i.on { background: #fff; }
@@ -313,20 +335,29 @@ h1 u { background: var(--grad); -webkit-background-clip: text; background-clip: 
 .spread > * + * { border-left: 1px solid var(--rim); }
 .tear .tn, .lastw .lwd { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .lastw li b { color: var(--lilac); }
-.grid i { border: 0; background: rgba(255, 255, 255, .7); border-radius: 50%; box-shadow: inset 0 0 0 1.5px #cdb9f6; }
+.grid i { border: 0; background: rgba(255, 255, 255, .7); border-radius: 50%; box-shadow: inset 0 0 0 1.5px #d5d8de; }
 .grid i.on { background: var(--grad); box-shadow: none; color: #fff; }
 .grid i.goal { box-shadow: inset 0 0 0 2px var(--pen); color: var(--pen); }
 .count b { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .fig .o { stroke: var(--ink); }
 .fig .m.on path { fill: url(#hatch); }
 .fig .hatch line { stroke: var(--lilac); stroke-width: 2.2; }
-.story { background: linear-gradient(170deg, #efe6ff, #f8f2ff 45%, #e7ddff); }
-.story.purple { background: linear-gradient(150deg, #b48cff, #6f3fd8); color: #fff; }
+.story { background: linear-gradient(170deg, #f6f7f9, #ffffff 45%, #eceef2); }
+.story.purple { background: linear-gradient(150deg, #4fa3ff, #123fc4); color: #fff; }
 .story.purple .bars i.done { background: #fff; }
-.story.deep { background: linear-gradient(160deg, #e7ddff, #f6f0ff); }
+.story.deep { background: linear-gradient(160deg, #eceef2, #f4f5f7); }
 .mini div { border: 1px solid rgba(255, 255, 255, .6); border-radius: 18px; background: rgba(255, 255, 255, .15); }
 .stamp { border-radius: 999px; }
 .bigstamp { background: rgba(255, 255, 255, .85); border: 0; border-radius: 26px; box-shadow: var(--glow); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+/* Less blue: neutral greys, blue saved for buttons, picks, charts and the Antigua card */
+h1 u, .sn, .tear .tn, .lastw .lwd, .count b { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--ink); }
+.t-pep .pep, .lastw li b { color: var(--mute); }
+.links button, .iconbtn, .toast, .date, .hist .when, .counts b, .cal .n, .stepper input, .stepper button, .stepper.flat, .timer b,
+.picked > div, .why li > span:first-child, .log li > span:first-child, .pagedate b, .rank li:first-child, .rewards li.got, .xlink .xl { color: var(--ink); }
+.banner { background: rgba(255, 255, 255, .6); } .banner b { color: var(--ink); }
+.ghost { color: var(--ink); border-color: var(--soft); }
+.setchip { color: var(--ink); border-color: var(--soft); }
+.grid i.goal { box-shadow: inset 0 0 0 2px var(--ink); color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { .wiggle, .fig .m.pop path, .fig text.pop, .setchip.pop, .bigstamp { animation: none !important; } .burst { display: none; } .btn:active { transform: none; } }
 </style>
 </head>
@@ -661,7 +692,7 @@ function homeView() {
   var n = S.workouts.length, dsc = daysSinceCardio(), last = sorted()[n - 1];
   var now = new Date(), toGo = Math.max(0, daysBetween(now, localDate(ROAD.end))), rc = roadCount();
   var h = '<div class="pagedate"><span>' + now.toLocaleDateString('en-US', { weekday: 'long' }) + ' · ' + now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span><i></i></div>';
-  h += '<div class="topbar"><div><h1>Ready to <u>work</u>?' + star() + star(1) + '</h1><p class="pep">' + esc(pepNote(dsc)) + '</p></div>' +
+  h += '<div class="topbar"><div><h1>Ready to <u>work</u>?' + star() + star(1) + '</h1></div>' +
     '<button class="iconbtn" data-act="go" data-v="settings" aria-label="Settings">⚙︎</button></div>';
 
   h += S.active ? '<button class="btn" data-act="go" data-v="workout">Back to your workout →</button>' : '<button class="btn" data-act="go" data-v="pick">Start workout →</button>';
@@ -701,7 +732,7 @@ function homeView() {
     '<span class="boxes">' + boxes + '</span>' +
     '<span class="small">' + rc + ' of ' + ROAD.goal + ' cardios' + (next ? ' · next reward at ' + next[0] + ': ' + esc(next[1]) : ' · every reward unlocked!') + '</span></button>';
 
-  h += '<div class="links"><button data-act="go" data-v="history">History</button></div>';
+  h += '<div class="links"><button data-act="go" data-v="stats">Stats</button><button data-act="go" data-v="history">History</button></div>';
   return h;
 }
 
@@ -712,13 +743,6 @@ function pickView() {
   h += '<div class="picked"><div><span class="head" id="pickhead">Today</span><span id="picklist">' + picksList().map(function (g) { return GN[g]; }).join(' · ') + '</span></div>' +
     '<button class="next" data-act="go" data-v="why">Next →</button></div>';
   return h;
-}
-
-function pepNote(dsc) {
-  if (dsc !== null && dsc >= 4) return 'Day ' + dsc + ' with no cardio. Antigua is watching.';
-  var notes = ['Abs. Again. You know the drill.', 'The bikini is at box 30. Just saying.',
-    'Show up, log it, leave cute.', 'You never regret the workout.'];
-  return notes[Math.floor(midnight(new Date()) / 864e5) % notes.length];
 }
 
 function whyView() {
@@ -868,6 +892,110 @@ function roadView() {
   return h;
 }
 
+// ---------- stats ----------
+var statsEx = null;   // the exercise shown on the strength chart
+function vbars(rows, opts) {
+  // Vertical bars: rows = [[label, value]], value labels only on the bars that matter
+  var W = 320, H = 150, top = 18, bot = 22, n = rows.length, max = Math.max.apply(null, rows.map(function (r) { return r[1]; }).concat([1]));
+  var bw = Math.min(28, (W - 8) / n - 6), step = (W - 8) / n, h = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(opts.label) + '">';
+  h += '<line class="base" x1="0" x2="' + W + '" y1="' + (H - bot) + '" y2="' + (H - bot) + '"/>';
+  rows.forEach(function (r, i) {
+    var x = 4 + i * step + (step - bw) / 2, bh = r[1] ? Math.max(4, (H - top - bot) * r[1] / max) : 0, y = H - bot - bh;
+    if (bh) h += '<path class="bar' + (i === n - 1 && opts.hiLast ? ' hi' : '') + '" d="M' + x + ' ' + (H - bot) + 'V' + (y + 4) + 'q0 -4 4 -4h' + (bw - 8) + 'q4 0 4 4V' + (H - bot) + 'Z"><title>' + esc(r[0] + ': ' + r[1] + (opts.unit || '')) + '</title></path>';
+    if (r[1] && (r[1] === max || i === n - 1)) h += '<text class="val" x="' + (x + bw / 2) + '" y="' + (y - 5) + '" text-anchor="middle">' + r[1] + '</text>';
+    h += '<text class="tick" x="' + (x + bw / 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + esc(r[0]) + '</text>';
+  });
+  return h + '</svg>';
+}
+function hbars(rows, unit) {
+  // Horizontal bars, biggest first, every row labeled (they're few)
+  var max = Math.max.apply(null, rows.map(function (r) { return r[1]; }).concat([1]));
+  return '<div class="hbars">' + rows.map(function (r) {
+    return '<div class="hrow"><span class="hl">' + esc(r[0]) + '</span><span class="ht"><i style="width:' + Math.max(2, Math.round(100 * r[1] / max)) + '%"></i></span><span class="hv">' + r[1] + (unit || '') + '</span></div>';
+  }).join('') + '</div>';
+}
+function line(pts, label) {
+  // pts = [[date, value]]; marks the best and the latest
+  var W = 320, H = 150, l = 30, r = 12, t = 16, b = 22;
+  var vs = pts.map(function (p) { return p[1]; }), lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs);
+  if (lo === hi) { lo = Math.max(0, lo - 10); hi = hi + 10; }
+  var X = function (i) { return pts.length === 1 ? (l + W - r) / 2 : l + (W - l - r) * i / (pts.length - 1); };
+  var Y = function (v) { return t + (H - t - b) * (1 - (v - lo) / (hi - lo)); };
+  var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p[1]).toFixed(1); }).join('');
+  var h = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(label) + '">';
+  [lo, hi].forEach(function (v) { h += '<line class="grid" x1="' + l + '" x2="' + (W - r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/><text class="tick" x="' + (l - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + v + '</text>'; });
+  h += '<path class="area" d="' + d + 'L' + X(pts.length - 1) + ' ' + (H - b) + 'L' + X(0) + ' ' + (H - b) + 'Z"/><path class="ln" d="' + d + '"/>';
+  var best = vs.indexOf(Math.max.apply(null, vs));
+  pts.forEach(function (p, i) {
+    h += '<circle class="dot' + (i === best ? ' hi' : '') + '" cx="' + X(i) + '" cy="' + Y(p[1]) + '" r="' + (i === best ? 5 : 3.5) + '"><title>' + esc(mdy(p[0]) + ': ' + p[1]) + '</title></circle>';
+  });
+  h += '<text class="tick" x="' + X(0) + '" y="' + (H - 6) + '" text-anchor="start">' + esc(mdy(pts[0][0]).slice(0, -3)) + '</text>';
+  if (pts.length > 1) h += '<text class="tick" x="' + X(pts.length - 1) + '" y="' + (H - 6) + '" text-anchor="end">' + esc(mdy(pts[pts.length - 1][0]).slice(0, -3)) + '</text>';
+  return h + '</svg>';
+}
+function statsView() {
+  var ws = sorted(), all = [], h = '<button class="back" data-act="go" data-v="home">‹ home</button><h1>Your <u>stats</u>' + star() + '</h1>';
+  ws.forEach(function (w) { w.sets.forEach(function (s) { all.push({ s: s, w: w }); }); });
+  if (!ws.length) return h + '<div class="box empty">Log a workout and your charts show up here.</div>';
+  var lifts = all.filter(function (x) { return x.s.cat !== 'cardio'; });
+  var volume = lifts.reduce(function (t, x) { return t + (x.s.bw || !x.s.weight || !x.s.reps ? 0 : x.s.weight * x.s.reps); }, 0);
+  var mins = ws.reduce(function (t, w) { return t + (w.end ? Math.max(0, (new Date(w.end) - new Date(w.date)) / 60000) : 0); }, 0);
+  var cardio = ws.reduce(function (t, w) { return t + cardioMinutes(w); }, 0);
+  h += '<div class="tiles4">' +
+    '<div class="box"><b class="sn">' + ws.length + '</b><span class="small muted">workouts</span></div>' +
+    '<div class="box"><b class="sn">' + lifts.length + '</b><span class="small muted">sets lifted</span></div>' +
+    '<div class="box"><b class="sn">' + (volume >= 10000 ? (volume / 1000).toFixed(1) + 'k' : volume.toLocaleString()) + '</b><span class="small muted">' + S.unit + ' moved in total</span></div>' +
+    '<div class="box"><b class="sn">' + cardio + '</b><span class="small muted">cardio minutes</span></div></div>';
+
+  // Workouts per week, last 8 weeks
+  var wk = [], start = midnight(new Date()); start.setDate(start.getDate() - start.getDay() - 49);
+  for (var i = 0; i < 8; i++) {
+    var a = new Date(start); a.setDate(start.getDate() + i * 7); var z = new Date(a); z.setDate(a.getDate() + 7);
+    wk.push([(a.getMonth() + 1) + '/' + a.getDate(), ws.filter(function (w) { var d = new Date(w.date); return d >= a && d < z; }).length]);
+  }
+  h += '<div class="box chartbox"><span class="head">Workouts per week</span>' + vbars(wk, { label: 'Workouts per week for the last 8 weeks', hiLast: true }) + '<span class="small muted">The last bar is this week.</span></div>';
+
+  // Strength progress for one exercise
+  var counts = {};
+  lifts.forEach(function (x) { if (!x.s.bw && x.s.weight) counts[x.s.name] = (counts[x.s.name] || 0) + 1; });
+  var names = Object.keys(counts).sort(function (p, q) { return counts[q] - counts[p]; }).slice(0, 6);
+  if (names.length) {
+    if (names.indexOf(statsEx) < 0) statsEx = names[0];
+    var pts = ws.map(function (w) {
+      var best = 0; w.sets.forEach(function (s) { if (s.name === statsEx && !s.bw && s.weight > best) best = s.weight; });
+      return best ? [w.date, best] : null;
+    }).filter(Boolean);
+    var gain = pts[pts.length - 1][1] - pts[0][1];
+    h += '<div class="box chartbox"><span class="head">Heaviest set: ' + esc(statsEx) + '</span>' +
+      '<div class="chips">' + names.map(function (nm) { return '<button class="opt' + (nm === statsEx ? ' on' : '') + '" data-act="statex" data-n="' + esc(nm) + '">' + esc(nm) + '</button>'; }).join('') + '</div>' +
+      line(pts, 'Heaviest ' + statsEx + ' set per workout') +
+      '<span class="small muted">' + (pts.length < 2 ? 'Do it again to see a trend.' : gain > 0 ? 'Up ' + gain + ' ' + S.unit + ' since your first time.' : gain < 0 ? 'Down ' + (-gain) + ' ' + S.unit + ' from your first time.' : 'Same weight as your first time.') + '</span></div>';
+  }
+
+  // Muscle groups by sets
+  var gs = {};
+  all.forEach(function (x) { gs[x.s.group] = (gs[x.s.group] || 0) + 1; });
+  h += '<div class="box chartbox"><span class="head">Sets by muscle group</span>' +
+    hbars(Object.keys(gs).sort(function (p, q) { return gs[q] - gs[p]; }).map(function (g) { return [GN[g], gs[g]]; })) + '</div>';
+
+  // Days of the week
+  var dow = [0, 0, 0, 0, 0, 0, 0];
+  ws.forEach(function (w) { dow[new Date(w.date).getDay()]++; });
+  h += '<div class="box chartbox"><span class="head">Your gym days</span>' + vbars(DAYS.map(function (d, i) { return [d.slice(0, 3), dow[i]]; }), { label: 'Workouts by day of the week' }) + '</div>';
+
+  // Equipment
+  var eq = {};
+  lifts.forEach(function (x) { eq[x.s.cat] = (eq[x.s.cat] || 0) + 1; });
+  h += '<div class="box chartbox"><span class="head">What you use</span>' +
+    hbars(CATS.filter(function (c) { return eq[c[0]]; }).sort(function (p, q) { return eq[q[0]] - eq[p[0]]; }).map(function (c) { return [c[1], eq[c[0]]]; }), ' sets') + '</div>';
+
+  // Workout length
+  var lens = ws.filter(function (w) { return w.end; }).map(function (w) { return [w.date, Math.round((new Date(w.end) - new Date(w.date)) / 60000)]; });
+  if (lens.length) h += '<div class="box chartbox"><span class="head">Minutes per workout</span>' + (lens.length > 1 ? line(lens, 'Minutes per workout') : '') +
+    '<span class="small muted">Average ' + Math.round(mins / lens.length) + ' minutes.</span></div>';
+  return h;
+}
+
 function historyView() {
   var ws = sorted().reverse();
   var h = '<button class="back" data-act="go" data-v="home">‹ home</button><h1>History</h1>';
@@ -960,7 +1088,7 @@ function wrappedView() {
 
 function render() {
   if (view === 'workout' && !S.active) view = 'home';
-  app.innerHTML = ({ home: homeView, pick: pickView, why: whyView, workout: workoutView, road: roadView, history: historyView, settings: settingsView, wrapped: wrappedView }[view])();
+  app.innerHTML = ({ home: homeView, pick: pickView, why: whyView, workout: workoutView, road: roadView, history: historyView, stats: statsView, settings: settingsView, wrapped: wrappedView }[view])();
   if (view === 'workout') holdWake();
 }
 
@@ -998,6 +1126,7 @@ document.addEventListener('click', function (ev) {
       if (picks[g]) delete picks[g]; else { picks[g] = true; popPick = g; }
       break;
     case 'cardio': picks.cardio = true; go('pick'); return;
+    case 'statex': statsEx = t.dataset.n; break;
     case 'stretch': stretched = !stretched; break;
     case 'start': startWorkout(); return;
     case 'wrapped':
