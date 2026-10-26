@@ -363,15 +363,13 @@ h1 u, .sn, .tear .tn, .lastw .lwd, .count b { background: none; -webkit-backgrou
 .ghost { color: var(--ink); border-color: var(--soft); }
 .setchip { color: var(--ink); border-color: var(--soft); }
 .grid i.goal { box-shadow: inset 0 0 0 2px var(--ink); color: var(--ink); }
-.choices { display: flex; flex-direction: column; gap: 6px; }
-.choice { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 0 10px; text-align: left; font: inherit; color: var(--ink);
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.choice { display: flex; flex-direction: column; justify-content: center; gap: 1px; min-height: 52px; text-align: left; font: inherit; color: var(--ink);
   background: rgba(255, 255, 255, .75); border: 1px solid var(--rim); border-radius: 16px; padding: 10px 14px; box-shadow: 0 2px 8px rgba(20, 23, 31, .06); }
-.choice b { font-size: 16px; }
-.choice span { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.choice small { grid-column: 1 / -1; font-size: 12px; color: var(--mute); }
+.choice b { font-size: 15px; line-height: 1.2; }
+.choice small { font-size: 12px; color: var(--mute); }
 .choice.on { background: var(--grad); border-color: transparent; color: #fff; box-shadow: var(--glow); }
 .choice.on small { color: rgba(255, 255, 255, .85); }
-.hint.sug b { color: var(--pen); }
 .hgroup { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--soft); }
 .hg { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--pen); }
 .hg em { font-style: normal; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--mute); margin-left: 4px; }
@@ -404,32 +402,10 @@ var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 var ROAD = { start: '2026-10-18', end: '2026-12-25', goal: 40, minMinutes: 20 };
 var REWARDS = [[10, 'Prerolls'], [20, 'New workout set'], [30, 'New bikini'], [40, 'New shoes']];
 
-// Ideas shown once suggestions start, by muscle group and equipment
-var IDEAS = {
-  chest: { machine: ['Chest press', 'Pec deck', 'Cable fly'], free: ['Dumbbell bench press', 'Incline dumbbell press'], floor: ['Push-ups'], rack: ['Barbell bench press'] },
-  back: { machine: ['Lat pulldown', 'Seated cable row', 'Assisted pull-up'], free: ['Dumbbell row'], floor: ['Superman'], rack: ['Deadlift', 'Barbell row'] },
-  biceps: { machine: ['Cable curl', 'Preacher curl'], free: ['Dumbbell curl', 'Hammer curl', 'Kettlebell curl'], rack: ['Barbell curl'] },
-  triceps: { machine: ['Tricep pushdown'], free: ['Overhead dumbbell extension', 'Skull crushers'], floor: ['Bench dips'], rack: ['Close-grip bench press'] },
-  abs: { machine: ['Ab crunch machine', 'Cable crunch'], free: ['Kettlebell Russian twist'], floor: ['Crunches', 'Plank', 'Hanging leg raises', 'Dead bug'] },
-  glutes: { machine: ['Glute kickback machine', 'Hip abduction'], free: ['Hip thrust', 'Kettlebell swing'], floor: ['Glute bridge'], rack: ['Barbell hip thrust'] },
-  quads: { machine: ['Leg press', 'Leg extension', 'Hack squat'], free: ['Goblet squat', 'Dumbbell lunges'], floor: ['Walking lunges'], rack: ['Back squat'] },
-  hamstrings: { machine: ['Leg curl'], free: ['Romanian deadlift'], floor: ['Single-leg bridge'], rack: ['Barbell RDL'] }
-};
-// A light first weight (lb) for the ideas you haven't done yet; 0 means body weight
-var START = {
-  'chest press': 40, 'pec deck': 50, 'cable fly': 15, 'dumbbell bench press': 20, 'incline dumbbell press': 15, 'barbell bench press': 65,
-  'lat pulldown': 60, 'seated cable row': 60, 'assisted pull-up': 0, 'dumbbell row': 20, 'deadlift': 95, 'barbell row': 55,
-  'cable curl': 20, 'preacher curl': 25, 'dumbbell curl': 15, 'hammer curl': 15, 'kettlebell curl': 15, 'barbell curl': 45,
-  'tricep pushdown': 30, 'overhead dumbbell extension': 15, 'skull crushers': 20, 'close-grip bench press': 55,
-  'ab crunch machine': 50, 'cable crunch': 40, 'kettlebell russian twist': 15,
-  'glute kickback machine': 50, 'hip abduction': 100, 'hip thrust': 35, 'kettlebell swing': 25, 'barbell hip thrust': 95,
-  'leg press': 140, 'leg extension': 50, 'hack squat': 45, 'goblet squat': 25, 'dumbbell lunges': 15, 'back squat': 65,
-  'leg curl': 50, 'romanian deadlift': 25, 'barbell rdl': 75
-};
-// Muscles that go together, and how many exercises each gets in a workout
+// Muscles that go together
 var SPLITS = [['Leg day', ['glutes', 'quads', 'hamstrings']], ['Push day', ['chest', 'triceps']], ['Pull day', ['back', 'biceps']]];
-var SLOTS = { glutes: 2, quads: 2, hamstrings: 1, chest: 3, triceps: 2, back: 3, biceps: 2, abs: 2 };
-var SETS = 3;
+// An exercise joins the suggestions once you've logged it in this many workouts
+var KNOWN = 2;
 
 // ---------- storage ----------
 // A workout: { id, date, end, groups, stretch, sets: [{ group, cat, name, weight, bw, reps, seconds, minutes, miles }] }
@@ -598,112 +574,37 @@ function suggestPicks() {
   if (daysSinceCardio() !== 0) p.cardio = true;
   return { picks: p, name: best[0] };
 }
-function pastSets(name) {
-  // Your sets from the last finished workout that had this exercise
-  var key = name.trim().toLowerCase(), ws = sorted();
-  for (var i = ws.length - 1; i >= 0; i--) {
-    var l = ws[i].sets.filter(function (s) { return s.cat !== 'cardio' && s.name.toLowerCase() === key; });
-    if (l.length) return l;
-  }
-  return null;
-}
-function rx(name, g, cat) {
-  // What to do next time: add a rep each time, and once you hit 10, go up a notch
-  var inc = S.unit === 'kg' ? 2.5 : 5, l = pastSets(name), key = name.trim().toLowerCase();
-  var r = { name: name, g: g, cat: cat, sets: SETS, reps: null, seconds: null, weight: null, bw: false, known: !!l, mine: !!l };
-  if (!l) {
-    var st = START[key];
-    r.known = st != null;
-    r.bw = cat === 'floor' || st === 0;
-    if (/plank|wall sit/.test(key)) { r.seconds = 30; r.bw = true; } else r.reps = g === 'abs' ? 15 : 10;
-    if (!r.bw && st) r.weight = S.unit === 'kg' ? Math.round(st / 2.2 / 2.5) * 2.5 : st;
-    r.tag = 'New to you';
-    r.note = 'New one to try.' + (r.weight ? ' Go lighter if ' + r.weight + ' ' + S.unit + ' feels heavy.' : '');
-    return r;
-  }
-  r.cat = l[0].cat; r.g = l[0].group;
-  if (l.some(function (s) { return s.seconds != null; })) {
-    r.bw = l[0].bw; r.weight = l[0].bw ? null : l[0].weight;
-    r.seconds = Math.max.apply(null, l.map(function (s) { return s.seconds || 0; })) + 5;
-    r.note = '5 seconds longer than last time.'; r.tag = '+5 sec';
-    return r;
-  }
-  var best;
-  if (l.every(function (s) { return s.bw; })) {
-    best = Math.max.apply(null, l.map(function (s) { return s.reps || 0; }));
-    r.bw = true; r.reps = best < 20 ? best + 2 : best;
-    r.note = best < 20 ? '2 more reps than last time.' : 'Same as last time.'; r.tag = best < 20 ? '+2 reps' : 'Same as last time';
-    return r;
-  }
-  // The heaviest weight you did for 3+ reps counts; singles are just showing off
-  var w = l.filter(function (s) { return !s.bw; }), solid = w.filter(function (s) { return s.reps >= 3; });
-  var top = Math.max.apply(null, (solid.length ? solid : w).map(function (s) { return s.weight; }));
-  best = Math.max.apply(null, w.filter(function (s) { return s.weight === top; }).map(function (s) { return s.reps || 0; }));
-  if (best >= 10) { r.weight = round1(top + inc); r.reps = 10; r.note = 'You hit ' + best + ' at ' + top + ' last time, so up ' + inc + ' ' + S.unit + '.'; r.tag = '+' + inc + ' ' + S.unit + ', you hit ' + best; }
-  else { r.weight = top; r.reps = best + 1; r.note = 'Same weight, 1 more rep than last time. At 10, it goes up ' + inc + ' ' + S.unit + '.'; r.tag = '+1 rep'; }
-  return r;
-}
 function candidates(g) {
-  // Your own exercises for this muscle (most done first, weighted before body weight), then ideas you haven't tried
-  var by = {}, out = [];
+  // Your own exercises for this muscle that you've logged in enough workouts, most done first
+  var by = {};
   sorted().forEach(function (w) {
     var seen = {};
     w.sets.forEach(function (s) {
       var k = s.name.toLowerCase();
       if (s.group !== g || s.cat === 'cardio' || seen[k]) return;
-      seen[k] = 1; by[k] = by[k] || { name: s.name, cat: s.cat, times: 0 }; by[k].times++; by[k].date = w.date; by[k].heavy = !s.bw;
+      seen[k] = 1; by[k] = by[k] || { name: s.name, cat: s.cat, g: g, times: 0 }; by[k].times++; by[k].date = w.date;
     });
   });
-  Object.keys(by).sort(function (a, b) { return by[b].times - by[a].times || by[b].heavy - by[a].heavy || (by[a].date < by[b].date ? 1 : -1); }).forEach(function (k) { out.push(by[k]); });
-  CATS.forEach(function (c) { ((IDEAS[g] || {})[c[0]] || []).forEach(function (n) { if (!by[n.toLowerCase()]) out.push({ name: n, cat: c[0] }); }); });
-  return out;
+  return Object.keys(by).filter(function (k) { return by[k].times >= KNOWN; })
+    .sort(function (a, b) { return by[b].times - by[a].times || (by[a].date < by[b].date ? 1 : -1); })
+    .map(function (k) { return by[k]; });
 }
 function choices(cat) {
-  // A few exercises to pick from on this equipment: the one you're partway through first, then the muscles with the least done today
-  var w = S.active, done = {}, perG = {};
+  // Your exercises on this equipment for the muscles you picked, taking turns between muscles; the least worked today first, abs last
+  var w = S.active, today = {}, perG = {};
   w.sets.forEach(function (x) {
     var k = x.name.toLowerCase();
-    if (!done[k] && x.cat !== 'cardio') perG[x.group] = (perG[x.group] || 0) + 1;
-    done[k] = (done[k] || 0) + 1;
+    if (!today[k] && x.cat !== 'cardio') perG[x.group] = (perG[x.group] || 0) + 1;
+    today[k] = 1;
   });
-  var lg = w.groups.filter(function (g) { return g !== 'cardio' && g !== 'abs'; });
-  var total = lg.reduce(function (t, g) { return t + SLOTS[g]; }, 0);
-  function room(g) { return g === 'abs' ? SLOTS.abs : Math.max(1, Math.round(SLOTS[g] * Math.min(1, 6 / total))); }
-  var order = lg.sort(function (a, b) { return (perG[a] || 0) / room(a) - (perG[b] || 0) / room(b); });
-  function list(g) {
-    return candidates(g).filter(function (x) { return x.cat === cat && (done[x.name.toLowerCase()] || 0) < SETS; })
-      .map(function (x) { var r = rx(x.name, g, x.cat); r.done = done[x.name.toLowerCase()] || 0; return r; });
-  }
-  // Four for the lifting, taking turns between muscles: your own exercises before new ideas
-  var lists = order.map(list), out = [];
-  [true, false].forEach(function (mine) {
-    for (var i = 0; out.length < 4 && i < 6; i++) lists.forEach(function (l) {
-      var r = l.filter(function (x) { return x.mine === mine; })[i];
-      if (r && out.length < 4) out.push(r);
-    });
-  });
-  // Plus one for abs, so they never get forgotten
-  if (w.groups.indexOf('abs') >= 0) { var ab = list('abs')[0]; if (ab) out.push(ab); }
-  out.sort(function (a, b) { return (b.done > 0) - (a.done > 0); });
-  out.forEach(function (r) {
-    if (!r.done) return;
-    // Partway through: stick with the weight you actually used today
-    var last = w.sets.filter(function (x) { return x.name.toLowerCase() === r.name.toLowerCase(); }).pop();
-    r.bw = !!last.bw; r.weight = last.bw ? null : last.weight; r.tag = 'Set ' + (r.done + 1) + ' of ' + r.sets;
-  });
+  var order = w.groups.filter(function (g) { return g !== 'cardio'; })
+    .sort(function (a, b) { return (a === 'abs') - (b === 'abs') || (perG[a] || 0) - (perG[b] || 0); });
+  var lists = order.map(function (g) { return candidates(g).filter(function (x) { return x.cat === cat; }); }), out = [];
+  for (var i = 0; i < 6; i++) lists.forEach(function (l) { if (l[i] && out.length < 6) out.push(l[i]); });
+  out.forEach(function (x) { x.today = !!today[x.name.toLowerCase()]; });
   return out;
 }
-function applyRx(u, r) {
-  // Fill the form with a suggestion; you still log it yourself
-  u.cat = r.cat; u.name = r.name; u.g = r.g; u.choose = false;
-  u.bw = r.bw; if (!r.bw && r.weight) u.weight = r.weight;
-  u.timer = r.seconds != null; u.tStart = 0; u.secs = 0;
-  if (!u.timer) u.reps = r.reps;
-}
-function fmtRx(r) {
-  var amt = r.seconds != null ? r.seconds + ' sec' : r.reps + ' reps';
-  return amt + (r.bw ? ' · body weight' : r.weight ? ' · ' + r.weight + ' ' + S.unit : '');
-}
+
 // ---------- workout actions ----------
 function ui() { return S.active.ui; }
 function slot(k) { var u = ui(); return k === 'b' ? u.b : u; }
@@ -962,10 +863,11 @@ function exerciseForm(k, sl, n0) {
   var h = '', num = function (x) { return n0 ? '<i class="num">' + (n0 + x) + '</i>' : ''; };
   h += '<div class="step"><label class="head" for="exname-' + k + '">' + num(0) + (k === 'b' ? 'Second exercise' : 'What\'s the exercise?') + '</label>';
   var ch = sl.cat ? choices(sl.cat) : [];
-  if (ch.length) h += '<div class="choices">' + ch.map(function (r, i) {
-    return '<button class="choice' + (sl.name.toLowerCase() === r.name.toLowerCase() ? ' on' : '') + '" data-act="idea" data-s="' + k + '" data-i="' + i + '">' +
-      '<b>' + esc(r.name) + '</b><span>' + SETS + ' × ' + esc(fmtRx(r)) + '</span><small>' + esc(r.tag) + '</small></button>';
-  }).join('') + '</div><span class="hint">Tap one, or type your own:</span>';
+  if (ch.length) h += '<div class="choices">' + ch.map(function (x, i) {
+    return '<button class="choice' + (sl.name.toLowerCase() === x.name.toLowerCase() ? ' on' : '') + '" data-act="idea" data-s="' + k + '" data-i="' + i + '">' +
+      '<b>' + esc(x.name) + '</b>' + (x.today ? '<small>done today</small>' : '') + '</button>';
+  }).join('') + '</div><span class="hint">Tap one, or type a new one:</span>';
+  else if (sl.cat) h += '<span class="hint">Exercises you log in ' + KNOWN + ' workouts show up here to tap.</span>';
   h += '<input class="name" id="exname-' + k + '" data-s="' + k + '" type="text" autocomplete="off" autocapitalize="sentences" placeholder="' + (k === 'b' ? 'like push-ups' : 'type it in, like chest press') + '" value="' + esc(sl.name) + '">' +
     '<div class="ghint" id="ghint-' + k + '">' + groupHint(k) + '</div>';
   h += '</div>';
@@ -979,9 +881,8 @@ function exerciseForm(k, sl, n0) {
 }
 function groupHint(k) {
   var sl = slot(k); if (!sl.name) return '';
-  var g = groupFor(sl), r = rx(sl.name, g, sl.cat);
-  var sug = r.known ? '<span class="hint sug">Suggested: <b>' + esc(fmtRx(r)) + '</b>. ' + esc(r.note) + '</span>' : '';
-  if (g && !sl.choose) return '<span class="hint">Goes under <b class="pen">' + GN[g] + '</b> · <button class="linkbtn" data-act="choose" data-s="' + k + '">change</button></span>' + sug;
+  var g = groupFor(sl);
+  if (g && !sl.choose) return '<span class="hint">Goes under <b class="pen">' + GN[g] + '</b> · <button class="linkbtn" data-act="choose" data-s="' + k + '">change</button></span>';
   var mine = S.active.groups.filter(function (x) { return x !== 'cardio'; });
   var all = mine.concat(GROUPS.map(function (x) { return x[0]; }).filter(function (x) { return x !== 'cardio' && mine.indexOf(x) < 0; }));
   return '<span class="hint">Which muscle is this?</span><div class="chips">' + all.map(function (x) { return '<button class="opt' + (x === g ? ' on' : '') + '" data-act="setg" data-s="' + k + '" data-g="' + x + '">' + GN[x] + '</button>'; }).join('') + '</div>';
@@ -1348,7 +1249,7 @@ document.addEventListener('click', function (ev) {
     case 'idea':
       sl = slot(t.dataset.s);
       var ch = choices(sl.cat)[+t.dataset.i];
-      if (ch) { applyRx(sl, ch); toastMsg = ''; }
+      if (ch) { sl.name = ch.name; sl.g = ch.g; sl.choose = false; prefill(t.dataset.s); toastMsg = ''; }
       save(); break;
     case 'choose': slot(t.dataset.s).choose = true; save(); break;
     case 'setg': sl = slot(t.dataset.s); sl.g = t.dataset.g; sl.choose = false; save(); break;
@@ -1418,11 +1319,11 @@ document.addEventListener('click', function (ev) {
 });
 
 function prefill(k) {
-  // Done it before (or it's a known idea)? Start from the suggestion: last time plus a rep or a notch
-  var u = slot(k), r = u.name && rx(u.name, groupFor(u), u.cat);
-  if (!r || !r.known) return;
-  u.bw = r.bw; if (!r.bw && r.weight) u.weight = r.weight;
-  if (r.seconds != null) { u.timer = true; u.secs = 0; u.tStart = 0; } else { u.timer = false; u.reps = r.reps; }
+  // Same exercise as before? Start from what you did last time.
+  var u = slot(k), s = u.name && lastSetNamed(u.name);
+  if (!s || s.cat === 'cardio') return;
+  u.bw = !!s.bw; if (s.weight) u.weight = s.weight;
+  if (s.seconds != null) { u.timer = true; u.secs = 0; u.tStart = 0; } else { u.timer = false; if (s.reps) u.reps = s.reps; }
 }
 
 var tapping = false;
