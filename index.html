@@ -74,6 +74,8 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .fig text { font-family: var(--hand); font-size: 14px; font-weight: 600; fill: var(--ink); cursor: pointer; }
 .fig text.on { fill: var(--pen); font-weight: 700; }
 .cal { position: absolute; top: 6px; right: 0; width: 88px; border: 1.6px solid var(--ink); border-radius: 4px; padding: 14px 5px 6px; text-align: center; background: var(--paper); }
+.cal.static { position: relative; top: auto; right: auto; width: auto; margin-top: 7px; padding: 14px 8px 8px; }
+.cal.static .n { font-size: 36px; }
 .cal.on { border-color: var(--pen); box-shadow: 3px 3px 0 var(--pen); }
 .cal .head { justify-content: center; line-height: 1.15; font-size: 10px; }
 .rings { position: absolute; top: -7px; left: 7px; right: 7px; display: flex; justify-content: space-between; }
@@ -514,13 +516,27 @@ document.addEventListener('visibilitychange', function () { if (document.visibil
 var app = document.getElementById('app');
 function go(v) { view = v; armed = null; if (v !== 'workout') toastMsg = ''; render(); window.scrollTo(0, 0); }
 
+function chub() {
+  // She fills out a bit each day you skip after two days off, and slims back down as you work out
+  var days = {}, level = 0, ws = sorted();
+  if (!ws.length) return 1;
+  ws.forEach(function (w) { days[midnight(w.date).getTime()] = 1; });
+  var d = midnight(ws[0].date), end = midnight(new Date()), off = 0;
+  while (d <= end) {
+    if (days[d.getTime()]) { level = Math.max(0, level - 2); off = 0; }
+    else if (++off > 2) level = Math.min(8, level + 1);
+    d.setDate(d.getDate() + 1);
+  }
+  return 1 + level * 0.035;
+}
 function bodySVG() {
   function m(g, paths) { return '<g class="m' + (picks[g] ? ' on' : '') + (popPick === g ? ' pop' : '') + '" data-act="pick" data-g="' + g + '" role="button" aria-label="' + GN[g] + '">' + paths + '</g>'; }
   function t(g, x, y, label, anchor) { return '<text class="' + (picks[g] ? 'on' : '') + (popPick === g ? ' pop' : '') + '" data-act="pick" data-g="' + g + '" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + label + '</text>'; }
-  return '<svg class="fig" viewBox="-46 -36 266 314" aria-label="Body map. Tap the muscle groups you are working.">' +
+  return '<svg class="fig" viewBox="-46 6 266 274" aria-label="Body map. Tap the muscle groups you are working.">' +
     '<defs><pattern id="hatch" class="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><line x1="0" y1="0" x2="0" y2="5"/></pattern></defs>' +
-    '<circle class="o" cx="96" cy="30" r="14"/><path class="o" d="M83 25 Q 88 14 100 15 Q 106 16 109 22"/><path class="o" d="M107 16 C 121 6, 133 14, 129 30 C 127 42, 133 52, 126 64 M109 20 C 118 16, 125 24, 123 34 C 121 44, 125 52, 121 60"/><circle class="tie" cx="107" cy="17" r="3"/><circle class="o" cx="96" cy="111" r="0.9"/><path class="o" d="M91 43 L 91 51 Q 83 54 75 58 M101 43 L101 51 Q109 54 117 58"/><path class="o" d="M75 58 Q 66 58 64 68 Q 61 82 61 96 Q 58 110 57 124 Q 56 132 59 133 Q 63 132 62 124 Q 66 110 68 97 Q 71 84 74 71 M117 58 Q126 58 128 68 Q131 82 131 96 Q134 110 135 124 Q136 132 133 133 Q129 132 130 124 Q126 110 124 97 Q121 84 118 71"/><path class="o" d="M74 71 Q 78 90 81 112 Q 82 118 78 126 Q 73 136 73 150 Q 72 175 79 205 Q 76 225 80 245 Q 83 256 85 262 M118 71 Q114 90 111 112 Q110 118 114 126 Q119 136 119 150 Q120 175 113 205 Q116 225 112 245 Q109 256 107 262"/><path class="o" d="M92 262 Q 93 250 94 240 Q 96 222 93 206 Q 95 180 95 160 Q 96 153 96 151 M100 262 Q99 250 98 240 Q96 222 99 206 Q97 180 97 160 Q96 153 96 151"/><path class="o" d="M85 262 Q 80 268 81 273 L 94 273 Q 95 267 92 262 M107 262 Q112 268 111 273 L98 273 Q97 267 100 262"/><path class="o d" d="M84 56 Q 89 58 93 57 M108 56 Q103 58 99 57"/><path class="o" d="M80 125 Q 88 128 96 128 M112 125 Q104 128 96 128"/><path class="o d" d="M84 204 Q 87 206 90 204 M108 204 Q105 206 102 204"/><path class="o d" d="M80 57 Q 81 59 82 61 M112 57 Q111 59 110 61"/><path class="o d" d="M81 129 Q 88 131 96 131 M111 129 Q104 131 96 131"/><path class="o d" d="M83 254 Q 88 256 93 254 M109 254 Q104 256 99 254"/><path class="o d" d="M58 127 L 58 132 M60 127 L 60.5 131 M134 127 L134 132 M132 127 L131.5 131"/><path class="o d" d="M86 265 L 91 264 M86 268 L 92 267 M106 265 L101 264 M106 268 L100 267"/><path class="o d" d="M81 271 L 94 271 M111 271 L98 271"/><path class="o d" d="M88 26 Q 91 25 93 26 M104 26 Q101 25 99 26"/><path class="o" d="M90 30.5 Q 91.5 32 93 30.5 M99 30.5 Q 100.5 32 102 30.5"/><path class="o" d="M93 36.5 Q 96 39 99 36.5"/><path class="o d" d="M111 22 C 119 22, 122 31, 121 42 M96 15 Q 90 19 88 26"/>' +
-    '<path class="ld" d="M36 52 L 80 66 M36 80 L 62 80 M156 80 L 130 80 M36 108 L 80 100 M156 106 L 104 106 M156 144 L 117 134 M156 184 L 111 184 M36 184 L 76 184 M36 238 L 80 238"/>' +
+    '<circle class="o" cx="96" cy="30" r="14"/><path class="o" d="M83 25 Q 88 14 100 15 Q 106 16 109 22"/><path class="o" d="M107 16 C 121 6, 133 14, 129 30 C 127 42, 133 52, 126 64 M109 20 C 118 16, 125 24, 123 34 C 121 44, 125 52, 121 60"/><circle class="tie" cx="107" cy="17" r="3"/><path class="o d" d="M111 22 C 119 22, 122 31, 121 42 M96 15 Q 90 19 88 26"/>' +
+    '<g class="bod" transform="translate(96 0) scale(' + chub().toFixed(3) + ' 1) translate(-96 0)">' +
+    '<circle class="o" cx="96" cy="111" r="0.9"/><path class="o" d="M91 43 L 91 51 Q 83 54 75 58 M101 43 L101 51 Q109 54 117 58"/><path class="o" d="M75 58 Q 66 58 64 68 Q 61 82 61 96 Q 58 110 57 124 Q 56 132 59 133 Q 63 132 62 124 Q 66 110 68 97 Q 71 84 74 71 M117 58 Q126 58 128 68 Q131 82 131 96 Q134 110 135 124 Q136 132 133 133 Q129 132 130 124 Q126 110 124 97 Q121 84 118 71"/><path class="o" d="M74 71 Q 78 90 81 112 Q 82 118 78 126 Q 73 136 73 150 Q 72 175 79 205 Q 76 225 80 245 Q 83 256 85 262 M118 71 Q114 90 111 112 Q110 118 114 126 Q119 136 119 150 Q120 175 113 205 Q116 225 112 245 Q109 256 107 262"/><path class="o" d="M92 262 Q 93 250 94 240 Q 96 222 93 206 Q 95 180 95 160 Q 96 153 96 151 M100 262 Q99 250 98 240 Q96 222 99 206 Q97 180 97 160 Q96 153 96 151"/><path class="o" d="M85 262 Q 80 268 81 273 L 94 273 Q 95 267 92 262 M107 262 Q112 268 111 273 L98 273 Q97 267 100 262"/><path class="o d" d="M84 56 Q 89 58 93 57 M108 56 Q103 58 99 57"/><path class="o" d="M80 125 Q 88 128 96 128 M112 125 Q104 128 96 128"/><path class="o d" d="M84 204 Q 87 206 90 204 M108 204 Q105 206 102 204"/><path class="o d" d="M80 57 Q 81 59 82 61 M112 57 Q111 59 110 61"/><path class="o d" d="M81 129 Q 88 131 96 131 M111 129 Q104 131 96 131"/><path class="o d" d="M83 254 Q 88 256 93 254 M109 254 Q104 256 99 254"/><path class="o d" d="M58 127 L 58 132 M60 127 L 60.5 131 M134 127 L134 132 M132 127 L131.5 131"/><path class="o d" d="M86 265 L 91 264 M86 268 L 92 267 M106 265 L101 264 M106 268 L100 267"/><path class="o d" d="M81 271 L 94 271 M111 271 L98 271"/>' +
     m('chest', '<path d="M78 61 Q 86 58 95 61 L 95 75 Q 87 80 79 76 Q 76 68 78 61 Z"/><path d="M114 61 Q106 58 97 61 L97 75 Q105 80 113 76 Q116 68 114 61 Z"/>') +
     m('back', '<path d="M76 77 Q 79 90 81 106 L 86 103 Q 84 90 86 80 Q 81 79 76 77 Z"/><path d="M116 77 Q113 90 111 106 L106 103 Q108 90 106 80 Q111 79 116 77 Z"/>') +
     m('biceps', '<path d="M65 72 Q 62 84 62 95 L 68 95 Q 70 83 72 74 Q 68 71 65 72 Z"/>') +
@@ -530,7 +546,9 @@ function bodySVG() {
     m('hamstrings', '<path d="M74 145 Q 72 170 77 200 L 81 199 Q 77 170 79 145 Z"/><path d="M118 145 Q120 170 115 200 L111 199 Q115 170 113 145 Z"/>') +
     m('quads', '<path d="M79 145 Q 77 170 81 199 L 92 199 Q 95 175 94 151 Q 88 145 79 145 Z"/><path d="M113 145 Q115 170 111 199 L100 199 Q97 175 98 151 Q104 145 113 145 Z"/>') +
     m('cardio', '<path d="M79 212 Q 77 228 81 246 L 91 246 Q 94 228 93 212 Q 86 209 79 212 Z"/><path d="M113 212 Q115 228 111 246 L101 246 Q98 228 99 212 Q106 209 113 212 Z"/>') +
-        t('chest', 34, 56, 'CHEST', 'end') + t('biceps', 34, 84, 'BI', 'end') + t('triceps', 158, 84, 'TRI') + t('back', 34, 112, 'BACK', 'end') + t('abs', 158, 110, 'ABS') +
+        '</g>' +
+    '<path class="ld" d="M36 52 L 80 66 M36 80 L 62 80 M156 80 L 130 80 M36 108 L 80 100 M156 106 L 104 106 M156 144 L 117 134 M156 184 L 111 184 M36 184 L 76 184 M36 238 L 80 238"/>' +
+    t('chest', 34, 56, 'CHEST', 'end') + t('biceps', 34, 84, 'BI', 'end') + t('triceps', 158, 84, 'TRI') + t('back', 34, 112, 'BACK', 'end') + t('abs', 158, 110, 'ABS') +
     t('glutes', 158, 148, 'GLUTE') + t('quads', 158, 188, 'QUAD') + t('hamstrings', 34, 188, 'HAMSTRING', 'end') + t('cardio', 34, 242, 'CARDIO', 'end') +
     '</svg>';
 }
@@ -541,16 +559,9 @@ function homeView() {
   var n = S.workouts.length, dsc = daysSinceCardio(), last = sorted()[n - 1];
   var now = new Date(), toGo = Math.max(0, daysBetween(now, localDate(ROAD.end)));
   var h = '<div class="pagedate"><span>' + now.toLocaleDateString('en-US', { weekday: 'short' }) + ' · ' + now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span><i></i><span><b>' + toGo + '</b> days to Antigua</span></div>';
-  h += '<div class="topbar"><div><h1>What are we <u>working</u> today?' + star() + star(1) + '</h1><p class="sub">Tap every muscle group you\'re working</p><p class="pep">' + esc(pepNote(dsc)) + '</p></div>' +
+  h += '<div class="topbar"><div><h1>Ready to <u>work</u>?' + star() + star(1) + '</h1><p class="pep">' + esc(pepNote(dsc)) + '</p></div>' +
     '<button class="iconbtn" data-act="go" data-v="settings" aria-label="Settings">⚙︎</button></div>';
-  if (S.active) h += '<button class="btn" data-act="go" data-v="workout">Back to your workout →</button>';
-  h += '<div class="mid">' + bodySVG() +
-    '<button class="cal' + (picks.cardio ? ' on' : '') + '" data-act="pick" data-g="cardio" aria-label="Days since cardio. It goes up by one every day you skip. Tap to add cardio today.">' +
-    '<span class="rings"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="head">Days since cardio</span>' +
-    '<span class="page" style="display:block"><span class="n" style="display:block">' + (dsc === null ? '–' : dsc) + '</span><span class="small">' + (dsc === 1 ? 'day' : 'days') + '</span></span>' +
-    '</button></div>';
-  h += '<div class="picked"><div><span class="head" id="pickhead">Today</span><span id="picklist">' + picksList().map(function (g) { return GN[g]; }).join(' · ') + '</span></div>' +
-    '<button class="next" data-act="go" data-v="why">Next →</button></div>';
+  h += S.active ? '<button class="btn" data-act="go" data-v="workout">Back to your workout →</button>' : '<button class="btn" data-act="go" data-v="pick">Start workout →</button>';
 
   var start = midnight(new Date()); start.setDate(start.getDate() - start.getDay());
   var thisWeek = 0, dots = '';
@@ -560,11 +571,14 @@ function homeView() {
     if (did) thisWeek++;
     dots += '<span><i class="' + (did ? 'on' : '') + (daysBetween(d, new Date()) === 0 ? ' today' : '') + '"></i>' + 'SMTWTFS'[i] + '</span>';
   }
-  h += '<div class="two"><div class="box"><span class="head">Last workout</span>' + (last
+  h += '<div class="two"><button class="cal static" data-act="cardio" aria-label="Days since cardio. It goes up by one every day you skip. Tap to start a workout with cardio.">' +
+    '<span class="rings"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="head">Days since cardio</span>' +
+    '<span class="page" style="display:block"><span class="n" style="display:block">' + (dsc === null ? '–' : dsc) + '</span><span class="small">' + (dsc === 1 ? 'day' : 'days') + '</span></span></button>' +
+    '<div class="box"><span class="head">Last workout</span>' + (last
     ? '<span class="date">' + mdy(last.date) + '</span><span class="small">Muscle group: <b class="pen">' + Object.keys(groupsOf(last)).map(function (g) { return GN[g]; }).join(' + ') + '</b></span>'
-    : '<span class="small muted">None yet</span>') + '</div>' +
+    : '<span class="small muted">None yet</span>') + '</div></div>' +
     '<div class="box"><div class="days">' + dots + '</div><div class="counts"><div><b>' + thisWeek + '</b><small>this week</small></div>' +
-    '<div style="text-align:right"><b>' + n + '</b><small>in total</small></div></div></div></div>';
+    '<div style="text-align:right"><b>' + n + '</b><small>in total</small></div></div></div>';
 
   var rc = roadCount(), month = ym(new Date().toISOString()), today = new Date();
   var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
@@ -574,6 +588,15 @@ function homeView() {
   h += '<div class="' + (wm ? 'two' : '') + '"><button class="xlink" style="width:100%" data-act="go" data-v="road"><span class="xl">Road to Antigua</span><span class="xbar"><i style="width:' + Math.min(100, Math.round(100 * rc / ROAD.goal)) + '%"></i></span><span class="xv">' + rc + '/' + ROAD.goal + ' cardios</span></button>' +
     (wm ? '<button class="xlink" data-act="wrapped"><span class="xl">' + monthName(wm).slice(0, 3) + ' Wrapped</span><span class="xv">here until the 3rd</span></button>' : '') + '</div>';
   h += '<div class="links"><button data-act="go" data-v="history">History</button></div>';
+  return h;
+}
+
+function pickView() {
+  var h = '<button class="back" data-act="go" data-v="home">‹ home</button>';
+  h += '<div><h1>What are we <u>working</u> today?' + star() + '</h1><p class="sub">Tap every muscle group you\'re working</p></div>';
+  h += '<div class="mid">' + bodySVG() + '</div>';
+  h += '<div class="picked"><div><span class="head" id="pickhead">Today</span><span id="picklist">' + picksList().map(function (g) { return GN[g]; }).join(' · ') + '</span></div>' +
+    '<button class="next" data-act="go" data-v="why">Next →</button></div>';
   return h;
 }
 
@@ -600,7 +623,7 @@ function whyView() {
       .sort(function (a, b) { return b.d - a.d; })[0];
     if (due && due.d >= 5) reasons.push(GN[due.g] + ' hasn\'t been worked in ' + (due.d === 99 ? 'a while' : plural(due.d, 'day')) + '. Want to add it?');
   }
-  var h = '<button class="back" data-act="go" data-v="home">‹ back</button>';
+  var h = '<button class="back" data-act="go" data-v="pick">‹ back</button>';
   h += '<div><h1><u>' + GN[gs[0]] + '</u>' + (gs.length > 1 ? ' + ' + gs.slice(1).map(function (g) { return GN[g]; }).join(' + ') : '') + '</h1>' +
     '<p class="sub">Here\'s why these make sense today</p></div>';
   h += '<div class="why"><span class="head pen">Why today</span><ul>' + reasons.map(function (r) { return '<li><span>•</span><span>' + esc(r) + '</span></li>'; }).join('') + '</ul></div>';
@@ -823,7 +846,7 @@ function wrappedView() {
 
 function render() {
   if (view === 'workout' && !S.active) view = 'home';
-  app.innerHTML = ({ home: homeView, why: whyView, workout: workoutView, road: roadView, history: historyView, settings: settingsView, wrapped: wrappedView }[view])();
+  app.innerHTML = ({ home: homeView, pick: pickView, why: whyView, workout: workoutView, road: roadView, history: historyView, settings: settingsView, wrapped: wrappedView }[view])();
   if (view === 'workout') holdWake();
 }
 
@@ -860,6 +883,7 @@ document.addEventListener('click', function (ev) {
       }
       if (picks[g]) delete picks[g]; else { picks[g] = true; popPick = g; }
       break;
+    case 'cardio': picks.cardio = true; go('pick'); return;
     case 'stretch': stretched = !stretched; break;
     case 'start': startWorkout(); return;
     case 'wrapped':
