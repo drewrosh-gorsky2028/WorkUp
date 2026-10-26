@@ -950,7 +950,29 @@ function funFacts(ws, all, lifts, volume, mins, cardio) {
   var gap = 0; for (var i = 1; i < ws.length; i++) gap = Math.max(gap, daysBetween(ws[i - 1].date, ws[i].date));
   if (ws.length > 1) f.push(['Longest break: ' + gap + ' day' + (gap === 1 ? '' : 's'), gap <= 3 ? 'Barely a nap. Iconic.' : 'We don\'t talk about it.']);
   if (mins) f.push([n(mins / 45) + (n(mins / 45) === '1' ? ' episode' : ' episodes') + ' of Love Island', 'That\'s ' + Math.round(mins) + ' minutes in the gym, and nobody got dumped from the villa.']);
-  return '<div class="box"><span class="head">Fun facts</span><ul class="funlist">' + f.map(function (x) { return '<li><b>' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></li>'; }).join('') + '</ul></div>';
+  if (volume >= 600) f.push([n(volume / 600) + ' baby grand pianos', 'Lifted, not played. Beethoven could never.']);
+  if (volume >= 2700) f.push([n(volume / 2700) + ' Mini Coopers', 'Total weight lifted. You could open a dealership.']);
+  if (volume >= 8000) f.push([n(volume / 8000) + ' killer whales', 'Shamu is shaking.']);
+  var heavy = 0, heavyName = ''; lifts.forEach(function (x) { if (!x.s.bw && x.s.weight > heavy) { heavy = x.s.weight; heavyName = x.s.name; } });
+  if (heavy) f.push(['Heaviest lift: ' + heavy + ' ' + S.unit, heavyName + '. ' + (heavy >= 150 ? 'That\'s a whole grown man.' : heavy >= 65 ? 'That\'s ' + n(heavy / 65) + ' golden retrievers at once.' : 'Pocket-sized, for now.')]);
+  var most = 0; ws.forEach(function (w) { most = Math.max(most, w.sets.filter(function (s) { return s.cat !== 'cardio'; }).length); });
+  if (most) f.push(['Most sets in one day: ' + most, most >= 20 ? 'Main character energy.' : 'Warming up, clearly.']);
+  var dow = [0, 0, 0, 0, 0, 0, 0]; ws.forEach(function (w) { dow[new Date(w.date).getDay()]++; });
+  var bd = dow.indexOf(Math.max.apply(null, dow));
+  if (dow[bd] > 1) f.push(['Your gym day: ' + DAYS[bd], DAYS[bd] + 's fear you.']);
+  var legs = ws.filter(function (w) { return w.sets.some(function (s) { return s.group === 'quads' || s.group === 'hamstrings' || s.group === 'glutes'; }); }).length;
+  if (legs) f.push(['Leg days: ' + legs, 'Never skipped. Those stairs don\'t stand a chance.']);
+  var kinds = Object.keys(fav).length;
+  if (kinds > 3) f.push([kinds + ' different exercises', 'Commitment issues? Never heard of her.']);
+  f.push([ws.length + ' workout' + (ws.length === 1 ? '' : 's') + ' logged', ws.length + ' more than your ex.']);
+  var age = daysBetween(ws[0].date, new Date()) + 1;
+  f.push(['Day ' + age + ' of the glow up', 'Antigua is ' + Math.max(0, daysBetween(new Date(), localDate(ROAD.end))) + ' days away.']);
+  if (mins) f.push([n(mins / 42) + (n(mins / 42) === '1' ? ' episode' : ' episodes') + ' of Grey\'s Anatomy', 'Same time in the gym, way less crying.']);
+  // Five a day, reshuffled at midnight
+  var seed = Math.floor(midnight(new Date()) / 864e5), rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  for (var j = f.length - 1; j > 0; j--) { var k = Math.floor(rnd() * (j + 1)), tmp = f[j]; f[j] = f[k]; f[k] = tmp; }
+  f = f.slice(0, 5);
+  return '<div class="box"><span class="head">Fun facts</span><ul class="funlist">' + f.map(function (x) { return '<li><b>' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></li>'; }).join('') + '</ul><span class="small muted">New ones every day.</span></div>';
 }
 
 function statsView() {
