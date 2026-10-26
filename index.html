@@ -363,6 +363,14 @@ h1 u, .sn, .tear .tn, .lastw .lwd, .count b { background: none; -webkit-backgrou
 .ghost { color: var(--ink); border-color: var(--soft); }
 .setchip { color: var(--ink); border-color: var(--soft); }
 .grid i.goal { box-shadow: inset 0 0 0 2px var(--ink); color: var(--ink); }
+.hgroup { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--soft); }
+.hg { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--pen); }
+.hg em { font-style: normal; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--mute); margin-left: 4px; }
+.hex { display: flex; flex-direction: column; gap: 3px; }
+.hex b { font-size: 15px; }
+.hsets { display: flex; flex-wrap: wrap; gap: 4px; }
+.hsets i { font-style: normal; font-size: 13px; color: var(--mute); background: rgba(255, 255, 255, .8); border: 1px solid var(--soft); border-radius: 999px; padding: 2px 9px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); }
 @media (prefers-reduced-motion: reduce) { .wiggle, .fig .m.pop path, .fig text.pop, .setchip.pop, .bigstamp { animation: none !important; } .burst { display: none; } .btn:active { transform: none; } }
 </style>
 </head>
@@ -1039,6 +1047,26 @@ function statsView() {
   return h;
 }
 
+function histGroups(w) {
+  // Sets grouped by muscle (in the order they were trained), same exercise on one line; spelling differences merge
+  var order = [], by = {};
+  w.sets.forEach(function (s) {
+    var g = s.group || 'other', k = s.name.trim().toLowerCase();
+    if (!by[g]) { by[g] = { names: [], ex: {} }; order.push(g); }
+    if (!by[g].ex[k]) { by[g].ex[k] = { name: s.name.trim(), sets: [] }; by[g].names.push(k); }
+    by[g].ex[k].sets.push(s);
+  });
+  return order.map(function (g) {
+    var n = by[g].names.reduce(function (t, k) { return t + by[g].ex[k].sets.length; }, 0);
+    return '<div class="hgroup"><span class="hg">' + esc(GN[g] || 'Other') + ' <em>' + plural(n, g === 'cardio' ? 'session' : 'set') + '</em></span>' +
+      by[g].names.map(function (k) {
+        var e = by[g].ex[k];
+        return '<div class="hex"><b>' + esc(e.name.charAt(0).toUpperCase() + e.name.slice(1)) + '</b><span class="hsets">' +
+          e.sets.map(function (x) { return '<i>' + esc(fmtSet(x)) + '</i>'; }).join('') + '</span></div>';
+      }).join('') + '</div>';
+  }).join('');
+}
+
 function historyView() {
   var ws = sorted().reverse();
   var h = '<button class="back" data-act="go" data-v="home">‹ home</button><h1>History</h1>';
@@ -1047,7 +1075,7 @@ function historyView() {
     var mins = w.end ? Math.round((new Date(w.end) - new Date(w.date)) / 60000) : null;
     h += '<div class="box hist"><div class="topbar"><span class="when">' + fmtDate(w.date) + '</span><span class="small muted">' + (mins ? mins + ' min' : '') + '</span></div>' +
       '<span class="small">' + Object.keys(groupsOf(w)).map(function (g) { return GN[g]; }).join(' · ') + (w.stretch ? ' · stretched' : '') + '</span>' +
-      w.sets.map(function (s) { return '<span class="small"><b>' + esc(s.name) + '</b> <span class="muted">' + esc(fmtSet(s)) + '</span></span>'; }).join('') +
+      histGroups(w) +
       '<div style="text-align:right"><button class="opt" data-act="delw" data-id="' + w.id + '">' + (armed === 'del' + w.id ? 'Tap again to delete' : 'Delete') + '</button></div></div>';
   });
   return h;
