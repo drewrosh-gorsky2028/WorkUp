@@ -136,6 +136,13 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .timer b { font-size: 24px; color: var(--pen); font-variant-numeric: tabular-nums; }
 .timer button { width: auto; border-radius: 999px; padding: 0 12px; font-size: 14px; }
 .timer.run button { background: var(--pen); color: var(--paper); }
+.tile.wide { grid-column: span 2; }
+.ghint { min-height: 18px; display: flex; flex-direction: column; gap: 6px; }
+.linkbtn { background: none; border: 0; padding: 2px 0; font-size: 12px; color: var(--pen); text-decoration: underline; text-underline-offset: 3px; }
+.ssbox { border: 1.6px solid var(--pen); border-radius: 4px 9px 5px 10px; padding: 10px; display: flex; flex-direction: column; gap: 10px; background: rgba(180, 140, 255, .06); }
+.ssbox .chip { font-size: 13px; padding: 4px 10px; }
+.sshead { display: flex; align-items: center; justify-content: space-between; }
+.exhead em.ss { color: var(--pen); font-weight: 700; opacity: 1; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
 .repeat small { display: block; font-weight: 500; font-size: 12px; color: var(--ink); opacity: .8; }
 .log { border-top: 1.6px dashed var(--ink); padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
 .log li { font-size: 15px; align-items: baseline; }
@@ -410,21 +417,54 @@ function ideasFor(group, cat) {
   return mine.concat(extra).slice(0, 5);
 }
 
+// Which muscle an exercise works, from its name: your own past sets first, then these words
+var AUTO = [
+  ['hamstrings', /leg curl|hamstring|\brdl|romanian|good ?morning|nordic|stiff.?leg/],
+  ['quads', /leg press|leg ext|squat|lunge|hack|adduct|step.?up|quad|sissy|wall sit/],
+  ['glutes', /hip thrust|glute|bridge|abduct|donkey|hydrant|swing|clam|frog|butt/],
+  ['abs', /\babs?\b|crunch|plank|sit.?up|leg (raise|lift)|knee raise|twist|dead ?bug|hollow|scissor|flutter|v.?up|dolly|mountain|oblique|wood ?chop|pallof|toe touch|bicycle/],
+  ['triceps', /tri|push.?down|skull|dip|overhead ext|close.?grip|kickback/],
+  ['biceps', /curl|bicep|hammer|preacher/],
+  ['back', /row|pull.?down|pull.?up|chin.?up|\blats?\b|deadlift|back ext|superman|face pull|shrug|pullover/],
+  ['chest', /chest|bench|pec|fly|flye|push.?up|squeeze press|incline|decline/]
+];
+function autoGroup(name) {
+  var key = name.trim().toLowerCase(); if (!key) return null;
+  var s = lastSetNamed(key); if (s && s.cat !== 'cardio') return s.group;
+  for (var i = 0; i < AUTO.length; i++) if (AUTO[i][1].test(key)) return AUTO[i][0];
+  return null;
+}
+function lifts() { return S.active.groups.filter(function (g) { return g !== 'cardio' && g !== 'abs'; }); }
+function groupFor(sl) {
+  // A name we don't know goes to the one muscle you picked, or we ask
+  if (sl.g) return sl.g;
+  var g = autoGroup(sl.name || ''); if (g) return g;
+  var l = lifts(); return sl.name && l.length === 1 ? l[0] : null;
+}
+
 // ---------- workout actions ----------
 function ui() { return S.active.ui; }
+function slot(k) { var u = ui(); return k === 'b' ? u.b : u; }
+function newSlot(cat) { return { cat: cat || null, name: '', g: null, weight: 45, reps: 10, bw: false, timer: false, tStart: 0, secs: 0 }; }
 function startWorkout() {
   var gs = GROUPS.map(function (g) { return g[0]; }).filter(function (g) { return picks[g]; });
   S.active = { id: uid(), date: new Date().toISOString(), groups: gs, stretch: stretched, sets: [],
-    ui: { g: gs[0], cat: null, name: '', weight: 45, reps: 10, bw: false, timer: false, tStart: 0, secs: 0, machine: null, minutes: 20, miles: 1 } };
+    ui: { cat: null, name: '', g: null, weight: 45, reps: 10, bw: false, timer: false, tStart: 0, secs: 0, machine: null, minutes: 20, miles: 1, b: null } };
   save(); go('workout');
 }
-function logSet(s) {
-  var before = roadCount();
-  S.active.sets.push(s);
-  S.active.ui.last = s;
-  var n = S.active.sets.length;
-  popSet = n - 1;
-  toastMsg = on('pep') ? ['Set ' + n + '. Look at you.', 'Set ' + n + ' in the book.', 'Set ' + n + ' done. Keep going.', 'That\'s ' + n + '. Strong.'][n % 4] : 'Logged! Set ' + n + ' done.';
+function logSets(list) {
+  // One set, or both halves of a superset round sharing an ss id
+  var before = roadCount(), w = S.active, s = list[0];
+  if (list.length > 1) { var id = uid(); list.forEach(function (x) { x.ss = id; }); }
+  else delete s.ss;
+  popSet = w.sets.length;
+  list.forEach(function (x) { w.sets.push(x); });
+  w.ui.last = list;
+  var n = w.sets.length;
+  if (list.length > 1) {
+    var r = logGroups(w.sets)[0].length;
+    toastMsg = on('pep') ? ['Round ' + r + '. Double trouble.', 'Round ' + r + ' done. No rest for you.', 'Superset round ' + r + '. Strong.'][r % 3] : 'Logged both! Round ' + r + ' done.';
+  } else toastMsg = on('pep') ? ['Set ' + n + '. Look at you.', 'Set ' + n + ' in the book.', 'Set ' + n + ' done. Keep going.', 'That\'s ' + n + '. Strong.'][n % 4] : 'Logged! Set ' + n + ' done.';
   if (s.cat === 'cardio') {
     var mins = cardioMinutes(S.active);
     if (mins >= ROAD.minMinutes && mins - s.minutes < ROAD.minMinutes) {
@@ -579,11 +619,11 @@ function whyView() {
 }
 
 function workoutView() {
-  var w = S.active, u = ui(), cardio = u.g === 'cardio', n = S.workouts.length;
+  var w = S.active, u = ui(), cardio = u.cat === 'cardio';
   var h = '<button class="back" data-act="go" data-v="home">‹ home</button>';
   h += '<div><h1>Let\'s <u>go</u>' + star() + '</h1><p class="sub">' + w.groups.map(function (g) { return GN[g]; }).join(' + ') + '</p></div>';
-  h += '<div class="step"><span class="head"><i class="num">1</i>Which muscle?</span><div class="chips">' +
-    w.groups.map(function (g) { return '<button class="chip' + (g === u.g ? ' on' : '') + '" data-act="wg" data-g="' + g + '">' + GN[g] + '</button>'; }).join('') + '</div></div>';
+  h += '<div class="step"><span class="head"><i class="num">1</i>What are you using?</span><div class="tiles">' +
+    CATS.concat([['cardio', 'Cardio']]).map(function (c) { return '<button class="tile' + (c[0] === 'cardio' ? ' wide' : '') + (u.cat === c[0] ? ' on' : '') + '" data-act="cat" data-s="a" data-c="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div></div>';
   if (cardio) {
     h += '<div class="step"><span class="head"><i class="num">2</i>Which machine?</span><div class="tiles">' +
       MACHINES.map(function (m) { return '<button class="tile' + (u.machine === m ? ' on' : '') + '" data-act="machine" data-m="' + m + '">' + m + '</button>'; }).join('') + '</div></div>';
@@ -592,62 +632,93 @@ function workoutView() {
     h += '<button class="btn" data-act="log">Log cardio ✓</button>';
     h += '<p class="hint" style="margin:-6px 0 0;text-align:center">' + ROAD.minMinutes + '+ minutes fills a box on your Road to Antigua.</p>';
   } else {
-    h += '<div class="step"><span class="head"><i class="num">2</i>What are you using?</span><div class="tiles">' +
-      CATS.map(function (c) { return '<button class="tile' + (u.cat === c[0] ? ' on' : '') + '" data-act="cat" data-c="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div></div>';
-    h += '<div class="step"><label class="head" for="exname"><i class="num">3</i>What\'s the exercise?</label>' +
-      '<input class="name" id="exname" type="text" autocomplete="off" autocapitalize="sentences" placeholder="type it in, like chest press" value="' + esc(u.name) + '">';
-    if (n >= COLLECT && u.cat) {
-      var ideas = ideasFor(u.g, u.cat);
-      if (ideas.length) h += '<div class="chips">' + ideas.map(function (x) { return '<button class="opt" data-act="idea" data-n="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>';
-    } else if (n < COLLECT) {
-      h += '<span class="hint">Suggestions show up here after ' + COLLECT + ' workouts. <b class="pen">' + n + ' of ' + COLLECT + '</b> logged so far.</span>';
-    }
-    h += '</div>';
-    h += '<div class="two"><div class="step"><span class="head"><i class="num">4</i>Weight</span>' +
-      (u.bw ? '<div class="stepper flat">Body weight</div>' : stepper('weight', S.unit, S.unit === 'kg' ? 2.5 : 5)) +
-      '<button class="opt' + (u.bw ? ' on' : '') + '" data-act="bw">Body weight</button></div>' +
-      '<div class="step"><span class="head"><i class="num">5</i>' + (u.timer ? 'Time' : 'Reps') + '</span>' +
-      (u.timer ? '<div class="stepper timer' + (u.tStart ? ' run' : '') + '"><b id="tval">' + mmss(timerSecs()) + '</b><button data-act="timer">' + (u.tStart ? 'Stop' : u.secs ? 'Restart' : 'Start') + '</button></div>' : stepper('reps', '', 1)) +
-      '<button class="opt' + (u.timer ? ' on' : '') + '" data-act="usetimer">⏱ Use a timer</button></div></div>';
-    h += '<button class="btn" data-act="log">Log this set ✓</button>';
-    var l = u.last && u.last.cat !== 'cardio' ? u.last : null;
-    h += '<button class="ghost repeat" data-act="repeat"' + (l ? '' : ' disabled') + '>↻ Repeat last set' + (l ? '<small>' + esc(l.name) + ' · ' + esc(fmtSet(l)) + '</small>' : '') + '</button>';
+    h += exerciseForm('a', u, 2);
+    if (u.b) {
+      h += '<div class="ssbox"><div class="sshead"><span class="head pen">Superset with</span><button class="opt" data-act="superset">✕ No superset</button></div>' +
+        '<div class="chips">' + CATS.map(function (c) { return '<button class="chip' + (u.b.cat === c[0] ? ' on' : '') + '" data-act="cat" data-s="b" data-c="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>' +
+        exerciseForm('b', u.b, 0) + '</div>';
+    } else h += '<button class="ghost" data-act="superset">＋ Make it a superset</button>';
+    h += '<button class="btn" data-act="log">' + (u.b ? 'Log both ✓' : 'Log this set ✓') + '</button>';
+    var l = lastList(u);
+    h += '<button class="ghost repeat" data-act="repeat"' + (l ? '' : ' disabled') + '>↻ Repeat last ' + (l && l.length > 1 ? 'round' : 'set') +
+      (l ? '<small>' + l.map(function (x) { return esc(x.name) + ' · ' + esc(fmtSet(x)); }).join(' + ') + '</small>' : '') + '</button>';
   }
   h += '<div class="toast" id="toast" aria-live="polite">' + esc(toastMsg) + '</div>';
-  if (!didAbs(w) && u.g !== 'abs') h += '<button class="xlink" data-act="wg" data-g="abs"><span class="xl">Abs: not done yet</span><span class="xv">Tap when you\'re ready to get them over with</span></button>';
-  h += '<div class="log"><span class="head">Today\'s log</span>' + (w.sets.length ? '<span class="hint">Tap a set to do it again</span>' + logGroups(w.sets).map(function (gr) {
-    var s0 = w.sets[gr[0]], last = gr[gr.length - 1];
-    return '<div class="ex"><div class="exhead"><b>' + esc(s0.name) + '</b> <em>' + (s0.cat === 'cardio' ? 'cardio' : GN[s0.group] + ', ' + CN[s0.cat]) + '</em>' +
+  if (!didAbs(w)) h += '<div class="xlink"><span class="xl">Abs: not done yet</span><span class="xv">Get them over with before you finish</span></div>';
+  h += '<div class="log"><span class="head">Today\'s log</span>' + (w.sets.length ? '<span class="hint">Tap a set to do it again</span>' + logGroups(w.sets).map(function (units) {
+    var first = w.sets[units[0][0]], last = units[units.length - 1].join(','), names = units[0].map(function (i) { return w.sets[i]; });
+    var title = names.length > 1 ? '<em class="ss">Superset</em> <b>' + names.map(function (x) { return esc(x.name); }).join(' + ') + '</b>'
+      : '<b>' + esc(first.name) + '</b> <em>' + (first.cat === 'cardio' ? 'cardio' : GN[first.group] + ', ' + CN[first.cat]) + '</em>';
+    return '<div class="ex"><div class="exhead"><span>' + title + '</span>' +
       '<button class="rm" data-act="rmset" data-i="' + last + '" aria-label="Remove the last set">' + (armed === 'rm' + last ? 'remove last?' : '✕') + '</button></div>' +
-      '<div class="setchips">' + gr.map(function (i) { return '<button class="setchip' + (i === popSet ? ' pop' : '') + '" data-act="again" data-i="' + i + '">' + esc(shortSet(w.sets[i])) + '</button>'; }).join('') + '</div></div>';
+      '<div class="setchips">' + units.map(function (un) { return '<button class="setchip' + (un[0] >= popSet && popSet >= 0 ? ' pop' : '') + '" data-act="again" data-i="' + un.join(',') + '">' + un.map(function (i) { return esc(shortSet(w.sets[i])); }).join(' / ') + '</button>'; }).join('') + '</div></div>';
   }).join('') : '<span class="small muted">Nothing logged yet</span>') + '</div>';
   if (armed === 'finish') h += '<div class="why" style="display:flex;flex-direction:column;gap:8px"><span class="head pen">No abs today?</span>' +
-    '<button class="btn" data-act="wg" data-g="abs">Do abs now</button><button class="ghost" data-act="finish">Skip abs and finish</button></div>';
+    '<button class="btn" data-act="doabs">OK, doing abs now</button><button class="ghost" data-act="finish">Skip abs and finish</button></div>';
   else h += w.sets.length ? '<button class="btn" data-act="finish">Finish workout</button>'
     : '<button class="danger" data-act="discard">' + (armed === 'discard' ? 'Tap again to discard' : 'Discard workout') + '</button>';
   return h;
 }
+function exerciseForm(k, sl, n0) {
+  // The exercise name, weight and reps for one slot: 'a', or 'b' for the second half of a superset
+  var n = S.workouts.length, h = '', num = function (x) { return n0 ? '<i class="num">' + (n0 + x) + '</i>' : ''; };
+  h += '<div class="step"><label class="head" for="exname-' + k + '">' + num(0) + (k === 'b' ? 'Second exercise' : 'What\'s the exercise?') + '</label>' +
+    '<input class="name" id="exname-' + k + '" data-s="' + k + '" type="text" autocomplete="off" autocapitalize="sentences" placeholder="' + (k === 'b' ? 'like push-ups' : 'type it in, like chest press') + '" value="' + esc(sl.name) + '">' +
+    '<div class="ghint" id="ghint-' + k + '">' + groupHint(k) + '</div>';
+  if (n >= COLLECT && sl.cat) {
+    var ideas = [];
+    S.active.groups.forEach(function (g) { if (g !== 'cardio') ideasFor(g, sl.cat).forEach(function (x) { if (ideas.indexOf(x) < 0) ideas.push(x); }); });
+    if (ideas.length) h += '<div class="chips">' + ideas.slice(0, 6).map(function (x) { return '<button class="opt" data-act="idea" data-s="' + k + '" data-n="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>';
+  } else if (n < COLLECT && k === 'a') {
+    h += '<span class="hint">Suggestions show up here after ' + COLLECT + ' workouts. <b class="pen">' + n + ' of ' + COLLECT + '</b> logged so far.</span>';
+  }
+  h += '</div>';
+  h += '<div class="two"><div class="step"><span class="head">' + num(1) + 'Weight</span>' +
+    (sl.bw ? '<div class="stepper flat">Body weight</div>' : stepper('weight', S.unit, S.unit === 'kg' ? 2.5 : 5, k)) +
+    '<button class="opt' + (sl.bw ? ' on' : '') + '" data-act="bw" data-s="' + k + '">Body weight</button></div>' +
+    '<div class="step"><span class="head">' + num(2) + (sl.timer ? 'Time' : 'Reps') + '</span>' +
+    (sl.timer ? '<div class="stepper timer' + (sl.tStart ? ' run' : '') + '"><b id="tval-' + k + '">' + mmss(timerSecs(sl)) + '</b><button data-act="timer" data-s="' + k + '">' + (sl.tStart ? 'Stop' : sl.secs ? 'Restart' : 'Start') + '</button></div>' : stepper('reps', '', 1, k)) +
+    '<button class="opt' + (sl.timer ? ' on' : '') + '" data-act="usetimer" data-s="' + k + '">⏱ Use a timer</button></div></div>';
+  return h;
+}
+function groupHint(k) {
+  var sl = slot(k); if (!sl.name) return '';
+  var g = groupFor(sl);
+  if (g && !sl.choose) return '<span class="hint">Goes under <b class="pen">' + GN[g] + '</b> · <button class="linkbtn" data-act="choose" data-s="' + k + '">change</button></span>';
+  var mine = S.active.groups.filter(function (x) { return x !== 'cardio'; });
+  var all = mine.concat(GROUPS.map(function (x) { return x[0]; }).filter(function (x) { return x !== 'cardio' && mine.indexOf(x) < 0; }));
+  return '<span class="hint">Which muscle is this?</span><div class="chips">' + all.map(function (x) { return '<button class="opt' + (x === g ? ' on' : '') + '" data-act="setg" data-s="' + k + '" data-g="' + x + '">' + GN[x] + '</button>'; }).join('') + '</div>';
+}
+function lastList(u) {
+  var l = u.last; if (!l) return null;
+  if (!Array.isArray(l)) l = [l];
+  return l[0].cat === 'cardio' ? null : l;
+}
 function logGroups(sets) {
-  // One row per exercise, newest exercise on top; each row lists set indexes in the order done
-  var rows = [], at = {};
+  // One row per exercise (or superset pair), newest on top. Each row is a list of units: [i] for a set, [i, j] for a superset round.
+  var rows = [], at = {}, seen = {};
   sets.forEach(function (s, i) {
-    var k = s.cat + '|' + s.group + '|' + s.name.toLowerCase();
-    if (!(k in at)) { at[k] = rows.length; rows.push({ i: [], latest: 0 }); }
-    rows[at[k]].i.push(i); rows[at[k]].latest = i;
+    if (seen[i]) return;
+    var un = [i];
+    if (s.ss) for (var j = i + 1; j < sets.length; j++) if (sets[j].ss === s.ss) { un.push(j); seen[j] = 1; }
+    var k = un.map(function (x) { var t = sets[x]; return t.cat + '|' + t.group + '|' + t.name.toLowerCase(); }).join('+');
+    if (!(k in at)) { at[k] = rows.length; rows.push({ u: [], latest: 0 }); }
+    rows[at[k]].u.push(un); rows[at[k]].latest = i;
   });
-  return rows.sort(function (a, b) { return b.latest - a.latest; }).map(function (r) { return r.i; });
+  return rows.sort(function (a, b) { return b.latest - a.latest; }).map(function (r) { return r.u; });
 }
 function shortSet(s) {
   if (s.cat === 'cardio') return s.minutes + ' min' + (s.miles ? ' · ' + s.miles + ' mi' : '');
   return (s.bw ? 'BW' : s.weight) + (s.seconds != null ? ' · ' + mmss(s.seconds) : ' × ' + s.reps);
 }
-function stepper(field, unit, inc) {
-  var v = ui()[field];
-  return '<div class="stepper"><button data-act="step" data-f="' + field + '" data-d="-' + inc + '" aria-label="Less">−</button>' +
-    '<label><input inputmode="decimal" data-act="edit" data-f="' + field + '" value="' + (field === 'miles' ? v.toFixed(1) : v) + '" aria-label="' + field + '">' + unit + '</label>' +
-    '<button data-act="step" data-f="' + field + '" data-d="' + inc + '" aria-label="More">+</button></div>';
+function stepper(field, unit, inc, k) {
+  k = k || 'a';
+  var v = slot(k)[field], d = ' data-s="' + k + '" data-f="' + field + '"';
+  return '<div class="stepper"><button data-act="step"' + d + ' data-d="-' + inc + '" aria-label="Less">−</button>' +
+    '<label><input inputmode="decimal" data-act="edit"' + d + ' value="' + (field === 'miles' ? v.toFixed(1) : v) + '" aria-label="' + field + '">' + unit + '</label>' +
+    '<button data-act="step"' + d + ' data-d="' + inc + '" aria-label="More">+</button></div>';
 }
-function timerSecs() { var u = ui(); return u.tStart ? Math.floor((Date.now() - u.tStart) / 1000) : u.secs; }
+function timerSecs(sl) { return sl.tStart ? Math.floor((Date.now() - sl.tStart) / 1000) : sl.secs; }
 
 function roadView() {
   var c = roadCount(), left = Math.max(0, daysBetween(new Date(), localDate(ROAD.end))), cells = '';
@@ -759,8 +830,10 @@ function render() {
 }
 
 setInterval(function () {
-  var el = document.getElementById('tval');
-  if (el && S.active && S.active.ui.tStart) el.textContent = mmss(timerSecs());
+  ['a', 'b'].forEach(function (k) {
+    var el = document.getElementById('tval-' + k), sl = S.active && slot(k);
+    if (el && sl && sl.tStart) el.textContent = mmss(timerSecs(sl));
+  });
 }, 500);
 
 // ---------- events ----------
@@ -794,38 +867,59 @@ document.addEventListener('click', function (ev) {
     case 'wrapped': storyMonth = ym(new Date().toISOString()); storyIdx = t.dataset.photo ? 99 : 0; go('wrapped');
       if (t.dataset.photo) { var cs = wrappedCards(storyMonth); storyIdx = cs.length - 2; render(); }
       return;
-    case 'wg': u.g = t.dataset.g; toastMsg = ''; save(); break;
-    case 'cat': u.cat = t.dataset.c; save(); break;
+    case 'cat':
+      var sl = slot(t.dataset.s);
+      sl.cat = t.dataset.c; toastMsg = '';
+      if (sl.cat === 'cardio') u.b = null;
+      save(); break;
+    case 'superset': u.b = u.b ? null : newSlot(u.cat); save(); break;
     case 'machine': u.machine = t.dataset.m; save(); break;
-    case 'idea': u.name = t.dataset.n; prefill(); save(); break;
-    case 'bw': u.bw = !u.bw; save(); break;
-    case 'usetimer': u.timer = !u.timer; u.tStart = 0; u.secs = 0; save(); break;
+    case 'idea': sl = slot(t.dataset.s); sl.name = t.dataset.n; sl.g = null; sl.choose = false; prefill(t.dataset.s); save(); break;
+    case 'choose': slot(t.dataset.s).choose = true; save(); break;
+    case 'setg': sl = slot(t.dataset.s); sl.g = t.dataset.g; sl.choose = false; save(); break;
+    case 'bw': sl = slot(t.dataset.s); sl.bw = !sl.bw; save(); break;
+    case 'usetimer': sl = slot(t.dataset.s); sl.timer = !sl.timer; sl.tStart = 0; sl.secs = 0; save(); break;
     case 'timer':
-      if (u.tStart) { u.secs = timerSecs(); u.tStart = 0; } else { u.secs = 0; u.tStart = Date.now(); }
+      sl = slot(t.dataset.s);
+      if (sl.tStart) { sl.secs = timerSecs(sl); sl.tStart = 0; } else { sl.secs = 0; sl.tStart = Date.now(); }
       save(); break;
     case 'step':
-      u[t.dataset.f] = Math.max(0, round1(num(u[t.dataset.f]) + num(t.dataset.d))); save(); break;
+      sl = slot(t.dataset.s);
+      sl[t.dataset.f] = Math.max(0, round1(num(sl[t.dataset.f]) + num(t.dataset.d))); save(); break;
     case 'log':
-      if (u.g === 'cardio') {
+      if (u.cat === 'cardio') {
         if (!u.machine) { setToast('Pick a machine first (step 2).'); return; }
         if (!u.minutes) { setToast('Add your minutes first (step 3).'); return; }
-        logSet({ group: 'cardio', cat: 'cardio', name: u.machine, minutes: u.minutes, miles: u.miles || null });
+        logSets([{ group: 'cardio', cat: 'cardio', name: u.machine, minutes: u.minutes, miles: u.miles || null }]);
         break;
       }
-      var name = (document.getElementById('exname') || {}).value; if (name != null) u.name = name.trim();
-      if (!u.cat) { setToast('Pick what you\'re using first (step 2).'); return; }
-      if (!u.name) { setToast('Type the exercise name first (step 3).'); document.getElementById('exname').focus(); return; }
-      if (u.timer && u.tStart) { u.secs = timerSecs(); u.tStart = 0; }
-      if (u.timer && !u.secs) { setToast('Start the timer, then stop it when you\'re done.'); return; }
-      logSet({ group: u.g, cat: u.cat, name: u.name, weight: u.bw ? null : u.weight, bw: u.bw, reps: u.timer ? null : u.reps, seconds: u.timer ? u.secs : null });
-      u.name = ''; u.secs = 0; save();
+      if (!u.cat) { setToast('Pick what you\'re using first (step 1).'); return; }
+      var list = [], ks = u.b ? ['a', 'b'] : ['a'];
+      for (var q = 0; q < ks.length; q++) {
+        var k = ks[q], x = slot(k), inp = document.getElementById('exname-' + k), second = k === 'b' ? 'second ' : '';
+        if (inp) x.name = inp.value.trim();
+        if (!x.cat) { setToast('Pick what you\'re using for the second exercise.'); return; }
+        if (!x.name) { setToast('Type the ' + second + 'exercise name first.'); if (inp) inp.focus(); return; }
+        if (!groupFor(x)) { x.choose = true; save(); render(); setToast('Tap which muscle the ' + second + 'exercise works.'); return; }
+        if (x.timer && x.tStart) { x.secs = timerSecs(x); x.tStart = 0; }
+        if (x.timer && !x.secs) { setToast('Start the timer, then stop it when you\'re done.'); return; }
+        list.push({ group: groupFor(x), cat: x.cat, name: x.name, weight: x.bw ? null : x.weight, bw: x.bw, reps: x.timer ? null : x.reps, seconds: x.timer ? x.secs : null });
+      }
+      logSets(list);
+      // A superset keeps its names for the next round; a single exercise starts fresh
+      if (!u.b) { u.name = ''; u.g = null; u.choose = false; }
+      u.secs = 0; if (u.b) u.b.secs = 0;
+      save();
       break;
-    case 'repeat': if (u.last) logSet(JSON.parse(JSON.stringify(u.last))); break;
-    case 'again': logSet(JSON.parse(JSON.stringify(w.sets[+t.dataset.i]))); break;
+    case 'repeat': var lr = lastList(u); if (lr) logSets(JSON.parse(JSON.stringify(lr))); break;
+    case 'again': logSets(t.dataset.i.split(',').map(function (i) { return JSON.parse(JSON.stringify(w.sets[+i])); })); break;
     case 'rmset':
-      var i = +t.dataset.i;
-      if (armed === 'rm' + i) { w.sets.splice(i, 1); armed = null; toastMsg = ''; save(); } else armed = 'rm' + i;
+      if (armed === 'rm' + t.dataset.i) {
+        t.dataset.i.split(',').map(Number).sort(function (a, b) { return b - a; }).forEach(function (i) { w.sets.splice(i, 1); });
+        armed = null; toastMsg = ''; save();
+      } else armed = 'rm' + t.dataset.i;
       break;
+    case 'doabs': armed = null; render(); window.scrollTo(0, 0); return;
     case 'finish':
       if (!didAbs(w) && armed !== 'finish') { armed = 'finish'; break; }
       finishWorkout(); return;
@@ -848,22 +942,36 @@ document.addEventListener('click', function (ev) {
   if (grew) burst(ev.clientX, ev.clientY);
 });
 
-function prefill() {
+function prefill(k) {
   // Same exercise as before? Start from what you did last time.
-  var u = ui(), s = u.name && lastSetNamed(u.name);
+  var u = slot(k), s = u.name && lastSetNamed(u.name);
   if (!s || s.cat === 'cardio') return;
   u.bw = !!s.bw; if (s.weight) u.weight = s.weight;
   if (s.seconds != null) { u.timer = true; u.secs = 0; u.tStart = 0; } else { u.timer = false; if (s.reps) u.reps = s.reps; }
 }
 
+var tapping = false;
+document.addEventListener('pointerdown', function () { tapping = true; }, true);
+document.addEventListener('pointerup', function () { setTimeout(function () { tapping = false; }, 0); }, true);
+document.addEventListener('pointercancel', function () { tapping = false; }, true);
+
 document.addEventListener('input', function (ev) {
-  if (ev.target.id === 'exname' && S.active) { S.active.ui.name = ev.target.value; save(); }
+  var k = ev.target.dataset && ev.target.dataset.s;
+  if (/^exname-/.test(ev.target.id) && S.active) {
+    var sl = slot(k); sl.name = ev.target.value; sl.g = null; sl.choose = false; save();
+    var hint = document.getElementById('ghint-' + k); if (hint) hint.innerHTML = groupHint(k);
+  }
 });
 
 document.addEventListener('change', function (ev) {
   var t = ev.target;
-  if (t.id === 'exname' && S.active) { var before = JSON.stringify(ui()); S.active.ui.name = t.value.trim(); prefill(); save(); if (JSON.stringify(ui()) !== before) render(); }
-  if (t.dataset && t.dataset.act === 'edit' && S.active) { ui()[t.dataset.f] = Math.max(0, round1(num(t.value))); save(); render(); }
+  if (/^exname-/.test(t.id) && S.active) {
+    // Leaving the name by tapping a button: don't redraw under the tap, or the tap gets lost
+    var sl = slot(t.dataset.s), before = JSON.stringify(sl); sl.name = t.value.trim();
+    if (!tapping) prefill(t.dataset.s);
+    save(); if (JSON.stringify(sl) !== before) render();
+  }
+  if (t.dataset && t.dataset.act === 'edit' && S.active) { slot(t.dataset.s)[t.dataset.f] = Math.max(0, round1(num(t.value))); save(); render(); }
   if (t.dataset && t.dataset.month && t.files && t.files[0]) savePhoto(t.dataset.month, t.dataset.k, t.files[0]);
   if (t.id === 'import' && t.files[0]) {
     var r = new FileReader();
