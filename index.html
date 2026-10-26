@@ -363,6 +363,13 @@ h1 u, .sn, .tear .tn, .lastw .lwd, .count b { background: none; -webkit-backgrou
 .ghost { color: var(--ink); border-color: var(--soft); }
 .setchip { color: var(--ink); border-color: var(--soft); }
 .grid i.goal { box-shadow: inset 0 0 0 2px var(--ink); color: var(--ink); }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.choice { display: flex; flex-direction: column; justify-content: center; gap: 1px; min-height: 52px; text-align: left; font: inherit; color: var(--ink);
+  background: rgba(255, 255, 255, .75); border: 1px solid var(--rim); border-radius: 16px; padding: 10px 14px; box-shadow: 0 2px 8px rgba(20, 23, 31, .06); }
+.choice b { font-size: 15px; line-height: 1.2; }
+.choice small { font-size: 12px; color: var(--mute); }
+.choice.on { background: var(--grad); border-color: transparent; color: #fff; box-shadow: var(--glow); }
+.choice.on small { color: rgba(255, 255, 255, .85); }
 .hgroup { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--soft); }
 .hg { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--pen); }
 .hg em { font-style: normal; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--mute); margin-left: 4px; }
@@ -381,7 +388,6 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 'use strict';
 
 var KEY = 'workup.v1';
-var COLLECT = 14;   // workouts logged before suggestions start
 var GROUPS = [
   ['cardio', 'Cardio'], ['chest', 'Chest'], ['back', 'Back'], ['biceps', 'Biceps'], ['triceps', 'Triceps'],
   ['glutes', 'Glutes'], ['quads', 'Quads'], ['hamstrings', 'Hamstrings'], ['abs', 'Abs']
@@ -396,17 +402,10 @@ var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 var ROAD = { start: '2026-10-18', end: '2026-12-25', goal: 40, minMinutes: 20 };
 var REWARDS = [[10, 'Prerolls'], [20, 'New workout set'], [30, 'New bikini'], [40, 'New shoes']];
 
-// Ideas shown once suggestions start, by muscle group and equipment
-var IDEAS = {
-  chest: { machine: ['Chest press', 'Pec deck', 'Cable fly'], free: ['Dumbbell bench press', 'Incline dumbbell press'], floor: ['Push-ups'], rack: ['Barbell bench press'] },
-  back: { machine: ['Lat pulldown', 'Seated cable row', 'Assisted pull-up'], free: ['Dumbbell row'], floor: ['Superman'], rack: ['Deadlift', 'Barbell row'] },
-  biceps: { machine: ['Cable curl', 'Preacher curl'], free: ['Dumbbell curl', 'Hammer curl', 'Kettlebell curl'], rack: ['Barbell curl'] },
-  triceps: { machine: ['Tricep pushdown'], free: ['Overhead dumbbell extension', 'Skull crushers'], floor: ['Bench dips'], rack: ['Close-grip bench press'] },
-  abs: { machine: ['Ab crunch machine', 'Cable crunch'], free: ['Kettlebell Russian twist'], floor: ['Crunches', 'Plank', 'Hanging leg raises', 'Dead bug'] },
-  glutes: { machine: ['Glute kickback machine', 'Hip abduction'], free: ['Hip thrust', 'Kettlebell swing'], floor: ['Glute bridge'], rack: ['Barbell hip thrust'] },
-  quads: { machine: ['Leg press', 'Leg extension', 'Hack squat'], free: ['Goblet squat', 'Dumbbell lunges'], floor: ['Walking lunges'], rack: ['Back squat'] },
-  hamstrings: { machine: ['Leg curl'], free: ['Romanian deadlift'], floor: ['Single-leg bridge'], rack: ['Barbell RDL'] }
-};
+// Muscles that go together
+var SPLITS = [['Leg day', ['glutes', 'quads', 'hamstrings']], ['Push day', ['chest', 'triceps']], ['Pull day', ['back', 'biceps']]];
+// An exercise joins the suggestions once you've logged it in this many workouts
+var KNOWN = 2;
 
 // ---------- storage ----------
 // A workout: { id, date, end, groups, stretch, sets: [{ group, cat, name, weight, bw, reps, seconds, minutes, miles }] }
@@ -480,6 +479,7 @@ if (!S.firstWeek) { S.workouts = FIRST_WEEK; S.active = null; S.firstWeek = 1; s
 
 var view = S.active ? 'workout' : 'home';
 var picks = { abs: true };
+var picked = '';   // the day the app pre-picked, like Leg day
 var popPick = null, popSet = -1;   // the muscle or set just added, so only it animates
 var stretched = false;
 var armed = null; // two-tap confirmations
@@ -538,15 +538,6 @@ function lastSetNamed(name) {
   }
   return null;
 }
-function ideasFor(group, cat) {
-  // Your own exercises first, the one you haven't done in the longest time leading, then new ideas
-  var seen = {}, mine = [];
-  sorted().forEach(function (w) { w.sets.forEach(function (s) { if (s.group === group && s.cat === cat) seen[s.name] = w.date; }); });
-  Object.keys(seen).sort(function (a, b) { return seen[a] < seen[b] ? -1 : 1; }).forEach(function (n) { mine.push(n); });
-  var extra = ((IDEAS[group] || {})[cat] || []).filter(function (n) { return !seen[n]; });
-  return mine.concat(extra).slice(0, 5);
-}
-
 // Which muscle an exercise works, from its name: your own past sets first, then these words
 var AUTO = [
   ['hamstrings', /leg curl|hamstring|\brdl|romanian|good ?morning|nordic|stiff.?leg/],
@@ -570,6 +561,48 @@ function groupFor(sl) {
   if (sl.g) return sl.g;
   var g = autoGroup(sl.name || ''); if (g) return g;
   var l = lifts(); return sl.name && l.length === 1 ? l[0] : null;
+}
+
+// ---------- suggestions ----------
+function since(g) { var l = lastFor(g); return l ? daysBetween(l, new Date()) : 99; }
+function suggestPicks() {
+  // The muscles that have waited longest, plus abs, plus cardio for Antigua unless it's done today
+  var best = SPLITS.map(function (sp) { return [sp, sp[1].reduce(function (t, g) { return t + Math.min(since(g), 14); }, 0) / sp[1].length]; })
+    .sort(function (a, b) { return b[1] - a[1]; })[0][0];
+  var p = { abs: true };
+  best[1].forEach(function (g) { p[g] = true; });
+  if (daysSinceCardio() !== 0) p.cardio = true;
+  return { picks: p, name: best[0] };
+}
+function candidates(g) {
+  // Your own exercises for this muscle that you've logged in enough workouts, most done first
+  var by = {};
+  sorted().forEach(function (w) {
+    var seen = {};
+    w.sets.forEach(function (s) {
+      var k = s.name.toLowerCase();
+      if (s.group !== g || s.cat === 'cardio' || seen[k]) return;
+      seen[k] = 1; by[k] = by[k] || { name: s.name, cat: s.cat, g: g, times: 0 }; by[k].times++; by[k].date = w.date;
+    });
+  });
+  return Object.keys(by).filter(function (k) { return by[k].times >= KNOWN; })
+    .sort(function (a, b) { return by[b].times - by[a].times || (by[a].date < by[b].date ? 1 : -1); })
+    .map(function (k) { return by[k]; });
+}
+function choices(cat) {
+  // Your exercises on this equipment for the muscles you picked, taking turns between muscles; the least worked today first, abs last
+  var w = S.active, today = {}, perG = {};
+  w.sets.forEach(function (x) {
+    var k = x.name.toLowerCase();
+    if (!today[k] && x.cat !== 'cardio') perG[x.group] = (perG[x.group] || 0) + 1;
+    today[k] = 1;
+  });
+  var order = w.groups.filter(function (g) { return g !== 'cardio'; })
+    .sort(function (a, b) { return (a === 'abs') - (b === 'abs') || (perG[a] || 0) - (perG[b] || 0); });
+  var lists = order.map(function (g) { return candidates(g).filter(function (x) { return x.cat === cat; }); }), out = [];
+  for (var i = 0; i < 6; i++) lists.forEach(function (l) { if (l[i] && out.length < 6) out.push(l[i]); });
+  out.forEach(function (x) { x.today = !!today[x.name.toLowerCase()]; });
+  return out;
 }
 
 // ---------- workout actions ----------
@@ -614,7 +647,7 @@ function finishWorkout() {
   w.end = new Date().toISOString();
   S.workouts.push(w);
   S.active = null;
-  picks = { abs: true }; stretched = false;
+  picks = { abs: true }; picked = ''; stretched = false;
   save(); releaseWake(); go('home');
   stamp(w);
 }
@@ -708,7 +741,7 @@ function homeView() {
   h += '<div class="topbar"><div><h1>Ready to <u>work</u>?' + star() + star(1) + '</h1></div>' +
     '<button class="iconbtn" data-act="go" data-v="settings" aria-label="Settings">⚙︎</button></div>';
 
-  h += S.active ? '<button class="btn" data-act="go" data-v="workout">Back to your workout →</button>' : '<button class="btn" data-act="go" data-v="pick">Start workout →</button>';
+  h += S.active ? '<button class="btn" data-act="go" data-v="workout">Back to your workout →</button>' : '<button class="btn" data-act="begin">Start workout →</button>';
 
   // The journal spread: days since cardio | last workout
   var lastCardio = sorted().filter(function (w) { return cardioMinutes(w) > 0; }).pop();
@@ -751,7 +784,7 @@ function homeView() {
 
 function pickView() {
   var h = '<button class="back" data-act="go" data-v="home">‹ home</button>';
-  h += '<div><h1>What are we <u>working</u> today?' + star() + '</h1><p class="sub">Tap every muscle group you\'re working</p></div>';
+  h += '<div><h1>What are we <u>working</u> today?' + star() + '</h1><p class="sub">' + (picked ? picked + ' is due, so I lit it up. Tap to change.' : 'Tap every muscle group you\'re working') + '</p></div>';
   h += '<div class="mid">' + bodySVG() + '</div>';
   h += '<div class="picked"><div><span class="head" id="pickhead">Today</span><span id="picklist">' + picksList().map(function (g) { return GN[g]; }).join(' · ') + '</span></div>' +
     '<button class="next" data-act="go" data-v="why">Next →</button></div>';
@@ -759,7 +792,7 @@ function pickView() {
 }
 
 function whyView() {
-  var gs = picksList(), n = S.workouts.length, reasons = [];
+  var gs = picksList(), reasons = [];
   gs.forEach(function (g) {
     if (g === 'abs') { reasons.push('Abs go with every workout. Sorry.'); return; }
     if (g === 'cardio') { reasons.push('Cardio: ' + roadCount() + ' of ' + ROAD.goal + ' boxes filled before Antigua'); return; }
@@ -768,7 +801,7 @@ function whyView() {
   });
   var dsc = daysSinceCardio();
   if (!picks.cardio && dsc) reasons.push('Cardio is at ' + plural(dsc, 'day') + '. Tap CARDIO on the legs to add it.');
-  if (n >= COLLECT) {
+  {
     var due = GROUPS.map(function (g) { return g[0]; }).filter(function (g) { return g !== 'abs' && g !== 'cardio' && !picks[g]; })
       .map(function (g) { var l = lastFor(g); return { g: g, d: l ? daysBetween(l, new Date()) : 99 }; })
       .sort(function (a, b) { return b.d - a.d; })[0];
@@ -778,7 +811,6 @@ function whyView() {
   h += '<div><h1><u>' + GN[gs[0]] + '</u>' + (gs.length > 1 ? ' + ' + gs.slice(1).map(function (g) { return GN[g]; }).join(' + ') : '') + '</h1>' +
     '<p class="sub">Here\'s why these make sense today</p></div>';
   h += '<div class="why"><span class="head pen">Why today</span><ul>' + reasons.map(function (r) { return '<li><span>•</span><span>' + esc(r) + '</span></li>'; }).join('') + '</ul></div>';
-  if (n < COLLECT) h += '<p class="small muted" style="margin:0">Getting to know you: ' + n + ' of ' + COLLECT + ' workouts logged. Exercise ideas start after ' + COLLECT + '.</p>';
   h += '<div class="banner' + (stretched ? ' done' : '') + '"><div><b>STRETCH FIRST</b><span>' + (stretched ? 'Nice. Your body thanks you' : 'A few minutes before you start') + '</span></div>' +
     '<button data-act="stretch">' + (stretched ? 'Stretched ✓' : 'Done ✓') + '</button></div>';
   h += '<button class="btn" data-act="start">Start this workout →</button>';
@@ -828,17 +860,16 @@ function workoutView() {
 }
 function exerciseForm(k, sl, n0) {
   // The exercise name, weight and reps for one slot: 'a', or 'b' for the second half of a superset
-  var n = S.workouts.length, h = '', num = function (x) { return n0 ? '<i class="num">' + (n0 + x) + '</i>' : ''; };
-  h += '<div class="step"><label class="head" for="exname-' + k + '">' + num(0) + (k === 'b' ? 'Second exercise' : 'What\'s the exercise?') + '</label>' +
-    '<input class="name" id="exname-' + k + '" data-s="' + k + '" type="text" autocomplete="off" autocapitalize="sentences" placeholder="' + (k === 'b' ? 'like push-ups' : 'type it in, like chest press') + '" value="' + esc(sl.name) + '">' +
+  var h = '', num = function (x) { return n0 ? '<i class="num">' + (n0 + x) + '</i>' : ''; };
+  h += '<div class="step"><label class="head" for="exname-' + k + '">' + num(0) + (k === 'b' ? 'Second exercise' : 'What\'s the exercise?') + '</label>';
+  var ch = sl.cat ? choices(sl.cat) : [];
+  if (ch.length) h += '<div class="choices">' + ch.map(function (x, i) {
+    return '<button class="choice' + (sl.name.toLowerCase() === x.name.toLowerCase() ? ' on' : '') + '" data-act="idea" data-s="' + k + '" data-i="' + i + '">' +
+      '<b>' + esc(x.name) + '</b>' + (x.today ? '<small>done today</small>' : '') + '</button>';
+  }).join('') + '</div><span class="hint">Tap one, or type a new one:</span>';
+  else if (sl.cat) h += '<span class="hint">Exercises you log in ' + KNOWN + ' workouts show up here to tap.</span>';
+  h += '<input class="name" id="exname-' + k + '" data-s="' + k + '" type="text" autocomplete="off" autocapitalize="sentences" placeholder="' + (k === 'b' ? 'like push-ups' : 'type it in, like chest press') + '" value="' + esc(sl.name) + '">' +
     '<div class="ghint" id="ghint-' + k + '">' + groupHint(k) + '</div>';
-  if (n >= COLLECT && sl.cat) {
-    var ideas = [];
-    S.active.groups.forEach(function (g) { if (g !== 'cardio') ideasFor(g, sl.cat).forEach(function (x) { if (ideas.indexOf(x) < 0) ideas.push(x); }); });
-    if (ideas.length) h += '<div class="chips">' + ideas.slice(0, 6).map(function (x) { return '<button class="opt" data-act="idea" data-s="' + k + '" data-n="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>';
-  } else if (n < COLLECT && k === 'a') {
-    h += '<span class="hint">Suggestions show up here after ' + COLLECT + ' workouts. <b class="pen">' + n + ' of ' + COLLECT + '</b> logged so far.</span>';
-  }
   h += '</div>';
   h += '<div class="two"><div class="step"><span class="head">' + num(1) + 'Weight</span>' +
     (sl.bw ? '<div class="stepper flat">Body weight</div>' : stepper('weight', S.unit, S.unit === 'kg' ? 2.5 : 5, k)) +
@@ -1196,7 +1227,10 @@ document.addEventListener('click', function (ev) {
       }
       if (picks[g]) delete picks[g]; else { picks[g] = true; popPick = g; }
       break;
-    case 'cardio': picks.cardio = true; go('pick'); return;
+    case 'begin': case 'cardio':
+      var sp = suggestPicks(); picks = sp.picks; picked = sp.name;
+      if (a === 'cardio') picks.cardio = true;
+      go('pick'); return;
     case 'statex': statsEx = t.dataset.n; break;
     case 'stretch': stretched = !stretched; break;
     case 'start': startWorkout(); return;
@@ -1212,7 +1246,11 @@ document.addEventListener('click', function (ev) {
       save(); break;
     case 'superset': u.b = u.b ? null : newSlot(u.cat); save(); break;
     case 'machine': u.machine = t.dataset.m; save(); break;
-    case 'idea': sl = slot(t.dataset.s); sl.name = t.dataset.n; sl.g = null; sl.choose = false; prefill(t.dataset.s); save(); break;
+    case 'idea':
+      sl = slot(t.dataset.s);
+      var ch = choices(sl.cat)[+t.dataset.i];
+      if (ch) { sl.name = ch.name; sl.g = ch.g; sl.choose = false; prefill(t.dataset.s); toastMsg = ''; }
+      save(); break;
     case 'choose': slot(t.dataset.s).choose = true; save(); break;
     case 'setg': sl = slot(t.dataset.s); sl.g = t.dataset.g; sl.choose = false; save(); break;
     case 'bw': sl = slot(t.dataset.s); sl.bw = !sl.bw; save(); break;
