@@ -651,7 +651,7 @@ function pickView() {
 function pepNote(dsc) {
   if (dsc !== null && dsc >= 4) return 'Day ' + dsc + ' with no cardio. Antigua is watching.';
   var notes = ['Abs. Again. You know the drill.', 'Strong is a personality trait.', 'The bikini is at box 30. Just saying.',
-    'Show up, log it, leave cute.', 'One set at a time.', 'You never regret the workout.'];
+    'Show up, log it, leave cute.', 'You never regret the workout.'];
   return notes[Math.floor(midnight(new Date()) / 864e5) % notes.length];
 }
 
