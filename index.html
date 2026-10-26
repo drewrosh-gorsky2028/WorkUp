@@ -234,6 +234,11 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .taphint { text-align: center; font-size: 12px; opacity: .6; padding-bottom: 14px; }
 
 /* stats */
+.funlist { display: flex; flex-direction: column; gap: 12px; margin: 6px 0 0; padding: 0; list-style: none; }
+.funlist li { display: flex; flex-direction: column; gap: 1px; padding-bottom: 12px; border-bottom: 1px solid var(--soft); }
+.funlist li:last-child { border-bottom: 0; padding-bottom: 0; }
+.funlist b { font-size: 20px; line-height: 1.2; }
+.funlist span { font-size: 14px; color: var(--mute); }
 .tiles4 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .sn { font-size: 30px; line-height: 1.1; font-weight: 700; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; font-variant-numeric: tabular-nums; }
 .chartbox { gap: 8px; }
@@ -933,6 +938,43 @@ function line(pts, label) {
   if (pts.length > 1) h += '<text class="tick" x="' + X(pts.length - 1) + '" y="' + (H - 6) + '" text-anchor="end">' + esc(mdy(pts[pts.length - 1][0]).slice(0, -3)) + '</text>';
   return h + '</svg>';
 }
+function funFacts(ws, all, lifts, volume, mins, cardio) {
+  // Silly but true: each fact is [headline, punchline], skipped when there's no data for it
+  var f = [], n = function (v) { return v >= 10 ? Math.round(v).toLocaleString() : (Math.round(v * 10) / 10).toString(); };
+  if (volume) f.push([n(volume / 65) + ' golden retrievers', 'That\'s how much you\'ve lifted in total (' + volume.toLocaleString() + ' ' + S.unit + '). Good girls.']);
+  var fav = {}; lifts.forEach(function (x) { fav[x.s.name] = (fav[x.s.name] || 0) + 1; });
+  var top = Object.keys(fav).sort(function (p, q) { return fav[q] - fav[p]; })[0];
+  if (top) f.push(['Ride or die: ' + top, fav[top] + ' sets. It\'s getting serious, meet the parents.']);
+  var early = ws.slice().sort(function (p, q) { var d = function (w) { var t = new Date(w.date); return t.getHours() * 60 + t.getMinutes(); }; return d(p) - d(q); })[0];
+  if (early) { var t = new Date(early.date), hr = t.getHours(); f.push(['Earliest start: ' + ((hr % 12) || 12) + ':' + ('0' + t.getMinutes()).slice(-2) + (hr < 12 ? ' am' : ' pm'), hr < 9 ? 'Who even are you.' : 'An early bird, technically.']); }
+  var gap = 0; for (var i = 1; i < ws.length; i++) gap = Math.max(gap, daysBetween(ws[i - 1].date, ws[i].date));
+  if (ws.length > 1) f.push(['Longest break: ' + gap + ' day' + (gap === 1 ? '' : 's'), gap <= 3 ? 'Barely a nap. Iconic.' : 'We don\'t talk about it.']);
+  if (mins) f.push([n(mins / 45) + (n(mins / 45) === '1' ? ' episode' : ' episodes') + ' of Love Island', 'That\'s ' + Math.round(mins) + ' minutes in the gym, and nobody got dumped from the villa.']);
+  if (volume >= 600) f.push([n(volume / 600) + ' baby grand pianos', 'Lifted, not played. Beethoven could never.']);
+  if (volume >= 2700) f.push([n(volume / 2700) + ' Mini Coopers', 'Total weight lifted. You could open a dealership.']);
+  if (volume >= 8000) f.push([n(volume / 8000) + ' killer whales', 'Shamu is shaking.']);
+  var heavy = 0, heavyName = ''; lifts.forEach(function (x) { if (!x.s.bw && x.s.weight > heavy) { heavy = x.s.weight; heavyName = x.s.name; } });
+  if (heavy) f.push(['Heaviest lift: ' + heavy + ' ' + S.unit, heavyName + '. ' + (heavy >= 150 ? 'That\'s a whole grown man.' : heavy >= 65 ? 'That\'s ' + n(heavy / 65) + ' golden retrievers at once.' : 'Pocket-sized, for now.')]);
+  var most = 0; ws.forEach(function (w) { most = Math.max(most, w.sets.filter(function (s) { return s.cat !== 'cardio'; }).length); });
+  if (most) f.push(['Most sets in one day: ' + most, most >= 20 ? 'Main character energy.' : 'Warming up, clearly.']);
+  var dow = [0, 0, 0, 0, 0, 0, 0]; ws.forEach(function (w) { dow[new Date(w.date).getDay()]++; });
+  var bd = dow.indexOf(Math.max.apply(null, dow));
+  if (dow[bd] > 1) f.push(['Your gym day: ' + DAYS[bd], DAYS[bd] + 's fear you.']);
+  var legs = ws.filter(function (w) { return w.sets.some(function (s) { return s.group === 'quads' || s.group === 'hamstrings' || s.group === 'glutes'; }); }).length;
+  if (legs) f.push(['Leg days: ' + legs, 'Never skipped. Those stairs don\'t stand a chance.']);
+  var kinds = Object.keys(fav).length;
+  if (kinds > 3) f.push([kinds + ' different exercises', 'Commitment issues? Never heard of her.']);
+  f.push([ws.length + ' workout' + (ws.length === 1 ? '' : 's') + ' logged', ws.length + ' more than your ex.']);
+  var age = daysBetween(ws[0].date, new Date()) + 1;
+  f.push(['Day ' + age + ' of the glow up', 'Antigua is ' + Math.max(0, daysBetween(new Date(), localDate(ROAD.end))) + ' days away.']);
+  if (mins) f.push([n(mins / 42) + (n(mins / 42) === '1' ? ' episode' : ' episodes') + ' of Grey\'s Anatomy', 'Same time in the gym, way less crying.']);
+  // Five a day, reshuffled at midnight
+  var seed = Math.floor(midnight(new Date()) / 864e5), rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  for (var j = f.length - 1; j > 0; j--) { var k = Math.floor(rnd() * (j + 1)), tmp = f[j]; f[j] = f[k]; f[k] = tmp; }
+  f = f.slice(0, 5);
+  return '<div class="box"><span class="head">Fun facts</span><ul class="funlist">' + f.map(function (x) { return '<li><b>' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></li>'; }).join('') + '</ul><span class="small muted">New ones every day.</span></div>';
+}
+
 function statsView() {
   var ws = sorted(), all = [], h = '<button class="back" data-act="go" data-v="home">‹ home</button><h1>Your <u>stats</u>' + star() + '</h1>';
   ws.forEach(function (w) { w.sets.forEach(function (s) { all.push({ s: s, w: w }); }); });
@@ -946,6 +988,7 @@ function statsView() {
     '<div class="box"><b class="sn">' + lifts.length + '</b><span class="small muted">sets lifted</span></div>' +
     '<div class="box"><b class="sn">' + (volume >= 10000 ? (volume / 1000).toFixed(1) + 'k' : volume.toLocaleString()) + '</b><span class="small muted">' + S.unit + ' moved in total</span></div>' +
     '<div class="box"><b class="sn">' + cardio + '</b><span class="small muted">cardio minutes</span></div></div>';
+  h += funFacts(ws, all, lifts, volume, mins, cardio);
 
   // Workouts per week, last 8 weeks
   var wk = [], start = midnight(new Date()); start.setDate(start.getDate() - start.getDay() - 49);
