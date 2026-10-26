@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>WorkUp</title>
 <meta name="description" content="Log workouts on your phone and get suggestions for what to train next.">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,7 +21,7 @@
   --hand: 'Quicksand', ui-rounded, -apple-system, system-ui, sans-serif;
   color-scheme: dark;
 }
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 html, body { margin: 0; background: var(--paper); color: var(--ink); }
 body {
   font: 500 16px/1.4 var(--hand);
@@ -140,7 +140,14 @@ h1 u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(
 .log { border-top: 1.6px dashed var(--ink); padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
 .log li { font-size: 15px; align-items: baseline; }
 .log li em { font-style: normal; opacity: .7; font-size: 13px; }
-.log li .rm { margin-left: auto; flex: none; background: none; border: 0; color: var(--ink); opacity: .6; font-size: 13px; padding: 2px 4px; }
+.ex { display: flex; flex-direction: column; gap: 5px; padding: 6px 0; border-bottom: 1px dashed var(--soft); }
+.ex:last-child { border-bottom: 0; }
+.exhead { display: flex; align-items: baseline; gap: 6px; font-size: 15px; }
+.exhead em { font-style: normal; opacity: .7; font-size: 12px; }
+.setchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.setchip { font-weight: 600; font-size: 14px; background: transparent; color: var(--pen); border: 1.4px solid var(--pen); border-radius: 999px; padding: 3px 10px; font-variant-numeric: tabular-nums; }
+.setchip:active { background: var(--pen); color: var(--paper); }
+.exhead .rm, .log li .rm { margin-left: auto; flex: none; background: none; border: 0; color: var(--ink); opacity: .6; font-size: 13px; padding: 2px 4px; }
 
 /* road to xmas */
 .count { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
@@ -544,15 +551,31 @@ function workoutView() {
   }
   h += '<div class="toast" id="toast" aria-live="polite">' + esc(toastMsg) + '</div>';
   if (!didAbs(w) && u.g !== 'abs') h += '<button class="xlink" data-act="wg" data-g="abs"><span class="xl">Abs: not done yet</span><span class="xv">Tap when you\'re ready to get them over with</span></button>';
-  h += '<div class="log"><span class="head">Today\'s log</span>' + (w.sets.length ? '<ul>' + w.sets.map(function (s, i) {
-    return '<li><span>×</span><span>' + esc(s.name) + ' · ' + esc(fmtSet(s)) + ' <em>(' + (s.cat === 'cardio' ? 'cardio' : GN[s.group] + ', ' + CN[s.cat]) + ')</em></span>' +
-      '<button class="rm" data-act="rmset" data-i="' + i + '">' + (armed === 'rm' + i ? 'remove?' : '✕') + '</button></li>';
-  }).join('') + '</ul>' : '<span class="small muted">Nothing logged yet</span>') + '</div>';
+  h += '<div class="log"><span class="head">Today\'s log</span>' + (w.sets.length ? '<span class="hint">Tap a set to do it again</span>' + logGroups(w.sets).map(function (gr) {
+    var s0 = w.sets[gr[0]], last = gr[gr.length - 1];
+    return '<div class="ex"><div class="exhead"><b>' + esc(s0.name) + '</b> <em>' + (s0.cat === 'cardio' ? 'cardio' : GN[s0.group] + ', ' + CN[s0.cat]) + '</em>' +
+      '<button class="rm" data-act="rmset" data-i="' + last + '" aria-label="Remove the last set">' + (armed === 'rm' + last ? 'remove last?' : '✕') + '</button></div>' +
+      '<div class="setchips">' + gr.map(function (i) { return '<button class="setchip" data-act="again" data-i="' + i + '">' + esc(shortSet(w.sets[i])) + '</button>'; }).join('') + '</div></div>';
+  }).join('') : '<span class="small muted">Nothing logged yet</span>') + '</div>';
   if (armed === 'finish') h += '<div class="why" style="display:flex;flex-direction:column;gap:8px"><span class="head pen">No abs today?</span>' +
     '<button class="btn" data-act="wg" data-g="abs">Do abs now</button><button class="ghost" data-act="finish">Skip abs and finish</button></div>';
   else h += w.sets.length ? '<button class="btn" data-act="finish">Finish workout</button>'
     : '<button class="danger" data-act="discard">' + (armed === 'discard' ? 'Tap again to discard' : 'Discard workout') + '</button>';
   return h;
+}
+function logGroups(sets) {
+  // One row per exercise, newest exercise on top; each row lists set indexes in the order done
+  var rows = [], at = {};
+  sets.forEach(function (s, i) {
+    var k = s.cat + '|' + s.group + '|' + s.name.toLowerCase();
+    if (!(k in at)) { at[k] = rows.length; rows.push({ i: [], latest: 0 }); }
+    rows[at[k]].i.push(i); rows[at[k]].latest = i;
+  });
+  return rows.sort(function (a, b) { return b.latest - a.latest; }).map(function (r) { return r.i; });
+}
+function shortSet(s) {
+  if (s.cat === 'cardio') return s.minutes + ' min' + (s.miles ? ' · ' + s.miles + ' mi' : '');
+  return (s.bw ? 'BW' : s.weight) + (s.seconds != null ? ' · ' + mmss(s.seconds) : ' × ' + s.reps);
 }
 function stepper(field, unit, inc) {
   var v = ui()[field];
@@ -731,8 +754,10 @@ document.addEventListener('click', function (ev) {
       if (u.timer && u.tStart) { u.secs = timerSecs(); u.tStart = 0; }
       if (u.timer && !u.secs) { setToast('Start the timer, then stop it when you\'re done.'); return; }
       logSet({ group: u.g, cat: u.cat, name: u.name, weight: u.bw ? null : u.weight, bw: u.bw, reps: u.timer ? null : u.reps, seconds: u.timer ? u.secs : null });
+      u.name = ''; u.secs = 0; save();
       break;
     case 'repeat': if (u.last) logSet(JSON.parse(JSON.stringify(u.last))); break;
+    case 'again': logSet(JSON.parse(JSON.stringify(w.sets[+t.dataset.i]))); break;
     case 'rmset':
       var i = +t.dataset.i;
       if (armed === 'rm' + i) { w.sets.splice(i, 1); armed = null; toastMsg = ''; save(); } else armed = 'rm' + i;
