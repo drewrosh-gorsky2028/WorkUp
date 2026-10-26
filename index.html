@@ -944,7 +944,6 @@ function funFacts(ws, all, lifts, volume, mins, cardio) {
   if (volume) f.push([n(volume / 65) + ' golden retrievers', 'That\'s how much you\'ve lifted in total (' + volume.toLocaleString() + ' ' + S.unit + '). Good girls.']);
   var abReps = all.reduce(function (t, x) { return t + (x.s.group === 'abs' && x.s.reps ? x.s.reps : 0); }, 0);
   if (abReps) f.push([abReps + ' ab reps', abReps > 300 ? 'Your abs have unionized.' : 'Your abs would like to file a complaint.']);
-  if (cardio) f.push([n(cardio * 6 / 190) + (n(cardio * 6 / 190) === '1' ? ' iced latte' : ' iced lattes') + ' burned off', 'About ' + Math.round(cardio * 6 / 10) * 10 + ' calories from ' + cardio + ' cardio minutes. Antigua is ' + Math.max(0, daysBetween(new Date(), localDate(ROAD.end))) + ' days away, order accordingly.']);
   var fav = {}; lifts.forEach(function (x) { fav[x.s.name] = (fav[x.s.name] || 0) + 1; });
   var top = Object.keys(fav).sort(function (p, q) { return fav[q] - fav[p]; })[0];
   if (top) f.push(['Ride or die: ' + top, fav[top] + ' sets. It\'s getting serious, meet the parents.']);
