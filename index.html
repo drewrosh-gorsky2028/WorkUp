@@ -942,14 +942,9 @@ function funFacts(ws, all, lifts, volume, mins, cardio) {
   // Silly but true: each fact is [headline, punchline], skipped when there's no data for it
   var f = [], n = function (v) { return v >= 10 ? Math.round(v).toLocaleString() : (Math.round(v * 10) / 10).toString(); };
   if (volume) f.push([n(volume / 65) + ' golden retrievers', 'That\'s how much you\'ve lifted in total (' + volume.toLocaleString() + ' ' + S.unit + '). Good girls.']);
-  var abReps = all.reduce(function (t, x) { return t + (x.s.group === 'abs' && x.s.reps ? x.s.reps : 0); }, 0);
-  if (abReps) f.push([abReps + ' ab reps', abReps > 300 ? 'Your abs have unionized.' : 'Your abs would like to file a complaint.']);
   var fav = {}; lifts.forEach(function (x) { fav[x.s.name] = (fav[x.s.name] || 0) + 1; });
   var top = Object.keys(fav).sort(function (p, q) { return fav[q] - fav[p]; })[0];
   if (top) f.push(['Ride or die: ' + top, fav[top] + ' sets. It\'s getting serious, meet the parents.']);
-  var gs = {}; all.forEach(function (x) { gs[x.s.group] = (gs[x.s.group] || 0) + 1; });
-  var lonely = GROUPS.map(function (g) { return g[0]; }).filter(function (g) { return g !== 'cardio' && g !== 'abs'; }).sort(function (p, q) { return (gs[p] || 0) - (gs[q] || 0); })[0];
-  if (lonely) f.push(['Most ignored: ' + GN[lonely], gs[lonely] ? 'Only ' + gs[lonely] + ' sets. It\'s been leaving you on read.' : 'Zero sets. It thinks you\'re mad at it.']);
   var early = ws.slice().sort(function (p, q) { var d = function (w) { var t = new Date(w.date); return t.getHours() * 60 + t.getMinutes(); }; return d(p) - d(q); })[0];
   if (early) { var t = new Date(early.date), hr = t.getHours(); f.push(['Earliest start: ' + ((hr % 12) || 12) + ':' + ('0' + t.getMinutes()).slice(-2) + (hr < 12 ? ' am' : ' pm'), hr < 9 ? 'Who even are you.' : 'An early bird, technically.']); }
   var gap = 0; for (var i = 1; i < ws.length; i++) gap = Math.max(gap, daysBetween(ws[i - 1].date, ws[i].date));
