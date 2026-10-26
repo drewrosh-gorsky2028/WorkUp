@@ -363,11 +363,14 @@ h1 u, .sn, .tear .tn, .lastw .lwd, .count b { background: none; -webkit-backgrou
 .ghost { color: var(--ink); border-color: var(--soft); }
 .setchip { color: var(--ink); border-color: var(--soft); }
 .grid i.goal { box-shadow: inset 0 0 0 2px var(--ink); color: var(--ink); }
-.upnext { display: flex; flex-direction: column; gap: 3px; }
-.upnext .nxn { font-size: 20px; line-height: 1.2; }
-.upnext .nxr { font-weight: 700; font-variant-numeric: tabular-nums; }
-.upnext .nxb { display: flex; gap: 8px; margin-top: 6px; }
-.upnext .opt { font-size: 14px; padding: 7px 14px; }
+.choices { display: flex; flex-direction: column; gap: 6px; }
+.choice { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 0 10px; text-align: left; font: inherit; color: var(--ink);
+  background: rgba(255, 255, 255, .75); border: 1px solid var(--rim); border-radius: 16px; padding: 10px 14px; box-shadow: 0 2px 8px rgba(20, 23, 31, .06); }
+.choice b { font-size: 16px; }
+.choice span { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.choice small { grid-column: 1 / -1; font-size: 12px; color: var(--mute); }
+.choice.on { background: var(--grad); border-color: transparent; color: #fff; box-shadow: var(--glow); }
+.choice.on small { color: rgba(255, 255, 255, .85); }
 .hint.sug b { color: var(--pen); }
 .hgroup { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--soft); }
 .hg { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--pen); }
@@ -559,15 +562,6 @@ function lastSetNamed(name) {
   }
   return null;
 }
-function ideasFor(group, cat) {
-  // Your own exercises first, the one you haven't done in the longest time leading, then new ideas
-  var seen = {}, mine = [];
-  sorted().forEach(function (w) { w.sets.forEach(function (s) { if (s.group === group && s.cat === cat) seen[s.name] = w.date; }); });
-  Object.keys(seen).sort(function (a, b) { return seen[a] < seen[b] ? -1 : 1; }).forEach(function (n) { mine.push(n); });
-  var extra = ((IDEAS[group] || {})[cat] || []).filter(function (n) { return !seen[n]; });
-  return mine.concat(extra).slice(0, 5);
-}
-
 // Which muscle an exercise works, from its name: your own past sets first, then these words
 var AUTO = [
   ['hamstrings', /leg curl|hamstring|\brdl|romanian|good ?morning|nordic|stiff.?leg/],
@@ -616,13 +610,14 @@ function pastSets(name) {
 function rx(name, g, cat) {
   // What to do next time: add a rep each time, and once you hit 10, go up a notch
   var inc = S.unit === 'kg' ? 2.5 : 5, l = pastSets(name), key = name.trim().toLowerCase();
-  var r = { name: name, g: g, cat: cat, sets: SETS, reps: null, seconds: null, weight: null, bw: false, known: !!l };
+  var r = { name: name, g: g, cat: cat, sets: SETS, reps: null, seconds: null, weight: null, bw: false, known: !!l, mine: !!l };
   if (!l) {
     var st = START[key];
     r.known = st != null;
     r.bw = cat === 'floor' || st === 0;
     if (/plank|wall sit/.test(key)) { r.seconds = 30; r.bw = true; } else r.reps = g === 'abs' ? 15 : 10;
     if (!r.bw && st) r.weight = S.unit === 'kg' ? Math.round(st / 2.2 / 2.5) * 2.5 : st;
+    r.tag = 'New to you';
     r.note = 'New one to try.' + (r.weight ? ' Go lighter if ' + r.weight + ' ' + S.unit + ' feels heavy.' : '');
     return r;
   }
@@ -630,22 +625,22 @@ function rx(name, g, cat) {
   if (l.some(function (s) { return s.seconds != null; })) {
     r.bw = l[0].bw; r.weight = l[0].bw ? null : l[0].weight;
     r.seconds = Math.max.apply(null, l.map(function (s) { return s.seconds || 0; })) + 5;
-    r.note = '5 seconds longer than last time.';
+    r.note = '5 seconds longer than last time.'; r.tag = '+5 sec';
     return r;
   }
   var best;
   if (l.every(function (s) { return s.bw; })) {
     best = Math.max.apply(null, l.map(function (s) { return s.reps || 0; }));
     r.bw = true; r.reps = best < 20 ? best + 2 : best;
-    r.note = best < 20 ? '2 more reps than last time.' : 'Same as last time.';
+    r.note = best < 20 ? '2 more reps than last time.' : 'Same as last time.'; r.tag = best < 20 ? '+2 reps' : 'Same as last time';
     return r;
   }
   // The heaviest weight you did for 3+ reps counts; singles are just showing off
   var w = l.filter(function (s) { return !s.bw; }), solid = w.filter(function (s) { return s.reps >= 3; });
   var top = Math.max.apply(null, (solid.length ? solid : w).map(function (s) { return s.weight; }));
   best = Math.max.apply(null, w.filter(function (s) { return s.weight === top; }).map(function (s) { return s.reps || 0; }));
-  if (best >= 10) { r.weight = round1(top + inc); r.reps = 10; r.note = 'You hit ' + best + ' at ' + top + ' last time, so up ' + inc + ' ' + S.unit + '.'; }
-  else { r.weight = top; r.reps = best + 1; r.note = 'Same weight, 1 more rep than last time. At 10, it goes up ' + inc + ' ' + S.unit + '.'; }
+  if (best >= 10) { r.weight = round1(top + inc); r.reps = 10; r.note = 'You hit ' + best + ' at ' + top + ' last time, so up ' + inc + ' ' + S.unit + '.'; r.tag = '+' + inc + ' ' + S.unit + ', you hit ' + best; }
+  else { r.weight = top; r.reps = best + 1; r.note = 'Same weight, 1 more rep than last time. At 10, it goes up ' + inc + ' ' + S.unit + '.'; r.tag = '+1 rep'; }
   return r;
 }
 function candidates(g) {
@@ -663,60 +658,52 @@ function candidates(g) {
   CATS.forEach(function (c) { ((IDEAS[g] || {})[c[0]] || []).forEach(function (n) { if (!by[n.toLowerCase()]) out.push({ name: n, cat: c[0] }); }); });
   return out;
 }
-function cardioPick() {
-  // The cardio you do most is the least painful one
-  var n = {}; S.workouts.forEach(function (w) { w.sets.forEach(function (s) { if (s.cat === 'cardio') n[s.name] = (n[s.name] || 0) + 1; }); });
-  return Object.keys(n).sort(function (a, b) { return n[b] - n[a]; })[0] || 'Treadmill walk';
-}
-function nextUp() {
-  // One exercise at a time: finish the sets of the one you're on, then the muscle with the least done today
-  var w = S.active, done = {}, perG = {}, skip = w.skip || [];
-  w.sets.forEach(function (s) {
-    var k = s.name.toLowerCase();
-    if (!done[k] && s.cat !== 'cardio') perG[s.group] = (perG[s.group] || 0) + 1;
+function choices(cat) {
+  // A few exercises to pick from on this equipment: the one you're partway through first, then the muscles with the least done today
+  var w = S.active, done = {}, perG = {};
+  w.sets.forEach(function (x) {
+    var k = x.name.toLowerCase();
+    if (!done[k] && x.cat !== 'cardio') perG[x.group] = (perG[x.group] || 0) + 1;
     done[k] = (done[k] || 0) + 1;
   });
-  var last = w.sets[w.sets.length - 1];
-  if (last && last.cat !== 'cardio' && !last.ss && skip.indexOf(last.name.toLowerCase()) < 0) {
-    var r = rx(last.name, last.group, last.cat), n = done[last.name.toLowerCase()];
-    if (n < r.sets) {
-      // Stick with the weight you actually used
-      r.setNo = n + 1; r.bw = !!last.bw; r.weight = last.bw ? null : last.weight;
-      r.note = r.setNo === r.sets ? 'Last set of this one. Make it count.' : r.bw ? 'Same as your last set.' : 'Same weight as your last set.';
-      return r;
-    }
-  }
   var lg = w.groups.filter(function (g) { return g !== 'cardio' && g !== 'abs'; });
   var total = lg.reduce(function (t, g) { return t + SLOTS[g]; }, 0);
   function room(g) { return g === 'abs' ? SLOTS.abs : Math.max(1, Math.round(SLOTS[g] * Math.min(1, 6 / total))); }
-  var order = lg.filter(function (g) { return (perG[g] || 0) < room(g); })
-    .sort(function (a, b) { return (perG[a] || 0) / room(a) - (perG[b] || 0) / room(b); });
-  if (w.groups.indexOf('abs') >= 0 && (perG.abs || 0) < room('abs')) order.push('abs');
-  for (var i = 0; i < order.length; i++) {
-    var c = candidates(order[i]).filter(function (x) { var k = x.name.toLowerCase(); return !done[k] && skip.indexOf(k) < 0; })[0];
-    if (c) { r = rx(c.name, order[i], c.cat); r.setNo = 1; return r; }
+  var order = lg.sort(function (a, b) { return (perG[a] || 0) / room(a) - (perG[b] || 0) / room(b); });
+  function list(g) {
+    return candidates(g).filter(function (x) { return x.cat === cat && (done[x.name.toLowerCase()] || 0) < SETS; })
+      .map(function (x) { var r = rx(x.name, g, x.cat); r.done = done[x.name.toLowerCase()] || 0; return r; });
   }
-  var mins = cardioMinutes(w);
-  if (w.groups.indexOf('cardio') >= 0 && mins < ROAD.minMinutes && skip.indexOf('cardio') < 0)
-    return { name: cardioPick(), g: 'cardio', cat: 'cardio', minutes: ROAD.minMinutes - mins, note: (mins ? 'That finishes' : 'Fills') + ' box ' + Math.min(ROAD.goal, roadCount() + 1) + ' on the Road to Antigua.' };
-  if (skip.length) { w.skip = []; return nextUp(); }
-  return null;
+  // Four for the lifting, taking turns between muscles: your own exercises before new ideas
+  var lists = order.map(list), out = [];
+  [true, false].forEach(function (mine) {
+    for (var i = 0; out.length < 4 && i < 6; i++) lists.forEach(function (l) {
+      var r = l.filter(function (x) { return x.mine === mine; })[i];
+      if (r && out.length < 4) out.push(r);
+    });
+  });
+  // Plus one for abs, so they never get forgotten
+  if (w.groups.indexOf('abs') >= 0) { var ab = list('abs')[0]; if (ab) out.push(ab); }
+  out.sort(function (a, b) { return (b.done > 0) - (a.done > 0); });
+  out.forEach(function (r) {
+    if (!r.done) return;
+    // Partway through: stick with the weight you actually used today
+    var last = w.sets.filter(function (x) { return x.name.toLowerCase() === r.name.toLowerCase(); }).pop();
+    r.bw = !!last.bw; r.weight = last.bw ? null : last.weight; r.tag = 'Set ' + (r.done + 1) + ' of ' + r.sets;
+  });
+  return out;
 }
-function fmtRx(r) {
-  if (r.cat === 'cardio') return r.minutes + ' min';
-  var amt = r.seconds != null ? r.seconds + ' sec' : r.reps + ' reps';
-  return amt + (r.bw ? ' · body weight' : r.weight ? ' · ' + r.weight + ' ' + S.unit : '');
-}
-function useRx(u, r) {
+function applyRx(u, r) {
   // Fill the form with a suggestion; you still log it yourself
-  u.b = null; u.cat = r.cat; toastMsg = '';
-  if (r.cat === 'cardio') { u.machine = r.name; u.minutes = r.minutes; return; }
-  u.name = r.name; u.g = r.g; u.choose = false;
+  u.cat = r.cat; u.name = r.name; u.g = r.g; u.choose = false;
   u.bw = r.bw; if (!r.bw && r.weight) u.weight = r.weight;
   u.timer = r.seconds != null; u.tStart = 0; u.secs = 0;
   if (!u.timer) u.reps = r.reps;
 }
-
+function fmtRx(r) {
+  var amt = r.seconds != null ? r.seconds + ' sec' : r.reps + ' reps';
+  return amt + (r.bw ? ' · body weight' : r.weight ? ' · ' + r.weight + ' ' + S.unit : '');
+}
 // ---------- workout actions ----------
 function ui() { return S.active.ui; }
 function slot(k) { var u = ui(); return k === 'b' ? u.b : u; }
@@ -933,11 +920,6 @@ function workoutView() {
   var w = S.active, u = ui(), cardio = u.cat === 'cardio';
   var h = '<button class="back" data-act="go" data-v="home">‹ home</button>';
   h += '<div><h1>Let\'s <u>go</u>' + star() + '</h1><p class="sub">' + w.groups.map(function (g) { return GN[g]; }).join(' + ') + '</p></div>';
-  var nx = !u.name && !u.b && !cardio && nextUp();
-  if (nx) h += '<div class="why upnext"><span class="head">Up next · ' + GN[nx.g] + (nx.setNo > 1 ? ' · set ' + nx.setNo + ' of ' + nx.sets : '') + '</span>' +
-    '<b class="nxn">' + esc(nx.name) + '</b><span class="nxr">' + (nx.sets && nx.setNo === 1 ? nx.sets + ' sets × ' : '') + esc(fmtRx(nx)) + '</span>' +
-    '<span class="hint">' + esc(nx.note) + '</span>' +
-    '<div class="nxb"><button class="opt on" data-act="usesug">Do this</button><button class="opt" data-act="skipsug">Something else</button></div></div>';
   h += '<div class="step"><span class="head"><i class="num">1</i>What are you using?</span><div class="tiles">' +
     CATS.concat([['cardio', 'Cardio']]).map(function (c) { return '<button class="tile' + (c[0] === 'cardio' ? ' wide' : '') + (u.cat === c[0] ? ' on' : '') + '" data-act="cat" data-s="a" data-c="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div></div>';
   if (cardio) {
@@ -978,14 +960,14 @@ function workoutView() {
 function exerciseForm(k, sl, n0) {
   // The exercise name, weight and reps for one slot: 'a', or 'b' for the second half of a superset
   var h = '', num = function (x) { return n0 ? '<i class="num">' + (n0 + x) + '</i>' : ''; };
-  h += '<div class="step"><label class="head" for="exname-' + k + '">' + num(0) + (k === 'b' ? 'Second exercise' : 'What\'s the exercise?') + '</label>' +
-    '<input class="name" id="exname-' + k + '" data-s="' + k + '" type="text" autocomplete="off" autocapitalize="sentences" placeholder="' + (k === 'b' ? 'like push-ups' : 'type it in, like chest press') + '" value="' + esc(sl.name) + '">' +
+  h += '<div class="step"><label class="head" for="exname-' + k + '">' + num(0) + (k === 'b' ? 'Second exercise' : 'What\'s the exercise?') + '</label>';
+  var ch = sl.cat ? choices(sl.cat) : [];
+  if (ch.length) h += '<div class="choices">' + ch.map(function (r, i) {
+    return '<button class="choice' + (sl.name.toLowerCase() === r.name.toLowerCase() ? ' on' : '') + '" data-act="idea" data-s="' + k + '" data-i="' + i + '">' +
+      '<b>' + esc(r.name) + '</b><span>' + SETS + ' × ' + esc(fmtRx(r)) + '</span><small>' + esc(r.tag) + '</small></button>';
+  }).join('') + '</div><span class="hint">Tap one, or type your own:</span>';
+  h += '<input class="name" id="exname-' + k + '" data-s="' + k + '" type="text" autocomplete="off" autocapitalize="sentences" placeholder="' + (k === 'b' ? 'like push-ups' : 'type it in, like chest press') + '" value="' + esc(sl.name) + '">' +
     '<div class="ghint" id="ghint-' + k + '">' + groupHint(k) + '</div>';
-  if (sl.cat) {
-    var ideas = [];
-    S.active.groups.forEach(function (g) { if (g !== 'cardio') ideasFor(g, sl.cat).forEach(function (x) { if (ideas.indexOf(x) < 0) ideas.push(x); }); });
-    if (ideas.length) h += '<div class="chips">' + ideas.slice(0, 6).map(function (x) { return '<button class="opt" data-act="idea" data-s="' + k + '" data-n="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>';
-  }
   h += '</div>';
   h += '<div class="two"><div class="step"><span class="head">' + num(1) + 'Weight</span>' +
     (sl.bw ? '<div class="stepper flat">Body weight</div>' : stepper('weight', S.unit, S.unit === 'kg' ? 2.5 : 5, k)) +
@@ -1361,11 +1343,13 @@ document.addEventListener('click', function (ev) {
       sl.cat = t.dataset.c; toastMsg = '';
       if (sl.cat === 'cardio') u.b = null;
       save(); break;
-    case 'usesug': var nx = nextUp(); if (nx) useRx(u, nx); save(); break;
-    case 'skipsug': nx = nextUp(); if (nx) { w.skip = (w.skip || []).concat(nx.cat === 'cardio' ? 'cardio' : nx.name.toLowerCase()); save(); } break;
     case 'superset': u.b = u.b ? null : newSlot(u.cat); save(); break;
     case 'machine': u.machine = t.dataset.m; save(); break;
-    case 'idea': sl = slot(t.dataset.s); sl.name = t.dataset.n; sl.g = null; sl.choose = false; prefill(t.dataset.s); save(); break;
+    case 'idea':
+      sl = slot(t.dataset.s);
+      var ch = choices(sl.cat)[+t.dataset.i];
+      if (ch) { applyRx(sl, ch); toastMsg = ''; }
+      save(); break;
     case 'choose': slot(t.dataset.s).choose = true; save(); break;
     case 'setg': sl = slot(t.dataset.s); sl.g = t.dataset.g; sl.choose = false; save(); break;
     case 'bw': sl = slot(t.dataset.s); sl.bw = !sl.bw; save(); break;
