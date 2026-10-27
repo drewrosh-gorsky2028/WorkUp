@@ -329,6 +329,9 @@ h1 u { background: var(--grad); -webkit-background-clip: text; background-clip: 
 .banner button { border: 0; background: rgba(255, 255, 255, .85); }
 .banner.done button { background: var(--grad); color: #fff; }
 .picked { border-radius: 22px; }
+.sugdays { display: flex; flex-direction: column; gap: 6px; }
+.sugdays .chip { display: flex; flex-direction: column; align-items: center; line-height: 1.15; padding: 6px 14px; }
+.sugdays .chip small { font-size: 11px; font-weight: 600; opacity: .75; }
 .days i { border: 0; background: rgba(255, 255, 255, .85); box-shadow: inset 0 0 0 1.5px #d5d8de; }
 .days i.on { background: var(--grad); box-shadow: none; }
 .days i.today { outline: 0; box-shadow: inset 0 0 0 2px var(--pen); }
@@ -566,11 +569,16 @@ function groupFor(sl) {
 
 // ---------- suggestions ----------
 function since(g) { var l = lastFor(g); return l ? daysBetween(l, new Date()) : 99; }
+function dueDays() {
+  // Each day with how long its muscles have waited on average; days you've done before first (they have exercises to suggest), most due first
+  return SPLITS.map(function (sp) {
+    var tried = sp[1].some(function (g) { return since(g) < 99; });
+    return { sp: sp, tried: tried, days: Math.round(sp[1].reduce(function (t, g) { return t + Math.min(since(g), 14); }, 0) / sp[1].length) };
+  }).sort(function (a, b) { return b.tried - a.tried || b.days - a.days; });
+}
 function suggestPicks() {
-  // The muscles that have waited longest (of the days you've done before, so there's something to suggest), plus abs, plus cardio for Antigua unless it's done today
-  var tried = SPLITS.filter(function (sp) { return sp[1].some(function (g) { return since(g) < 99; }); });
-  var best = (tried.length ? tried : SPLITS).map(function (sp) { return [sp, sp[1].reduce(function (t, g) { return t + Math.min(since(g), 14); }, 0) / sp[1].length]; })
-    .sort(function (a, b) { return b[1] - a[1]; })[0][0];
+  // The most due day, plus abs, plus cardio for Antigua unless it's done today
+  var best = dueDays()[0].sp;
   var p = { abs: true };
   best[1].forEach(function (g) { p[g] = true; });
   if (daysSinceCardio() !== 0) p.cardio = true;
@@ -789,7 +797,12 @@ function homeView() {
 
 function pickView() {
   var h = '<button class="back" data-act="go" data-v="home">‹ home</button>';
-  h += '<div><h1>What are we <u>working</u> today?' + star() + '</h1><p class="sub">' + (picked ? picked + ' is due, so I lit it up. Tap to change.' : 'Tap every muscle group you\'re working') + '</p></div>';
+  h += '<div><h1>What are we <u>working</u> today?' + star() + '</h1><p class="sub">' + (picked ? picked + ' is lit up. Tap a suggestion or the body to change.' : 'Tap every muscle group you\'re working') + '</p></div>';
+  var lifts = GROUPS.map(function (g) { return g[0]; }).filter(function (g) { return picks[g] && g !== 'abs' && g !== 'cardio'; }).join();
+  h += '<div class="sugdays"><span class="head">Suggested</span><div class="chips">' + dueDays().map(function (d) {
+    return '<button class="chip' + (d.sp[1].slice().sort().join() === lifts.split(',').sort().join() ? ' on' : '') + '" data-act="day" data-d="' + d.sp[0] + '">' + d.sp[0] +
+      '<small>' + (!d.tried ? 'not yet' : d.days === 0 ? 'today' : d.days >= 14 ? '2+ weeks ago' : plural(d.days, 'day') + ' ago') + '</small></button>';
+  }).join('') + '</div></div>';
   h += '<div class="mid">' + bodySVG() + '</div>';
   h += '<div class="picked"><div><span class="head" id="pickhead">Today</span><span id="picklist">' + picksList().map(function (g) { return GN[g]; }).join(' · ') + '</span></div>' +
     '<button class="next" data-act="go" data-v="why">Next →</button></div>';
@@ -1236,6 +1249,12 @@ document.addEventListener('click', function (ev) {
       var sp = suggestPicks(); picks = sp.picks; picked = sp.name;
       if (a === 'cardio') picks.cardio = true;
       go('pick'); return;
+    case 'day':
+      // Swap in that day's muscles; abs stay, cardio stays as it was
+      var day = SPLITS.filter(function (sp) { return sp[0] === t.dataset.d; })[0];
+      var keep = { abs: true }; if (picks.cardio) keep.cardio = true;
+      picks = keep; day[1].forEach(function (g) { picks[g] = true; }); picked = day[0];
+      break;
     case 'statex': statsEx = t.dataset.n; break;
     case 'stretch': stretched = !stretched; break;
     case 'start': startWorkout(); return;
