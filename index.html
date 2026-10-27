@@ -455,7 +455,7 @@ var BW = 0;
 var FIRST_WEEK = [
   { id: 'w1020', date: at(10, 20, 8, 55), end: at(10, 20, 9, 41), groups: ['quads', 'glutes', 'hamstrings', 'abs'], stretch: false, sets: [].concat(
     sets('quads', 'machine', 'Leg press', [[100, 10], [140, 10], [140, 10], [160, 8]]),
-    sets('glutes', 'machine', 'Hip abduction', [[100, 10], [130, 10], [130, 10], [145, 10]]),
+    sets('quads', 'machine', 'Hip abduction', [[100, 10], [130, 10], [130, 10], [145, 10]]),
     sets('quads', 'machine', 'Hip adduction', [[130, 10], [130, 10], [145, 10]]),
     sets('hamstrings', 'rack', 'Hex bar deadlift', [[115, 5], [135, 5], [165, 1]]),
     sets('quads', 'floor', 'Bulgarian split squats', [[BW, 10], [BW, 10], [BW, 10]]),
@@ -480,6 +480,11 @@ var FIRST_WEEK = [
     sets('abs', 'floor', 'Ab dolly', [[BW, 15], [BW, 15]])) }
 ];
 if (!S.firstWeek) { S.workouts = FIRST_WEEK; S.active = null; S.firstWeek = 1; save(); }
+// Drew counts hip abduction as quads; move sets already filed under glutes
+if (!S.abductQuads) {
+  S.workouts.concat(S.active ? [S.active] : []).forEach(function (w) { w.sets.forEach(function (s) { if (s.group === 'glutes' && /abduct/i.test(s.name)) s.group = 'quads'; }); });
+  S.abductQuads = 1; save();
+}
 
 var view = S.active ? 'workout' : 'home';
 var picks = { abs: true };
@@ -545,8 +550,8 @@ function lastSetNamed(name) {
 // Which muscle an exercise works, from its name: your own past sets first, then these words
 var AUTO = [
   ['hamstrings', /leg curl|hamstring|\brdl|romanian|good ?morning|nordic|stiff.?leg/],
-  ['quads', /leg press|leg ext|squat|lunge|hack|adduct|step.?up|quad|sissy|wall sit/],
-  ['glutes', /hip thrust|glute|bridge|abduct|donkey|hydrant|swing|clam|frog|butt/],
+  ['quads', /leg press|leg ext|squat|lunge|hack|adduct|abduct|step.?up|quad|sissy|wall sit/],
+  ['glutes', /hip thrust|glute|bridge|donkey|hydrant|swing|clam|frog|butt/],
   ['abs', /\babs?\b|crunch|plank|sit.?up|leg (raise|lift)|knee raise|twist|dead ?bug|hollow|scissor|flutter|v.?up|dolly|mountain|oblique|wood ?chop|pallof|toe touch|bicycle/],
   ['triceps', /tri|push.?down|skull|dip|overhead ext|close.?grip|kickback/],
   ['biceps', /curl|bicep|hammer|preacher/],
@@ -881,7 +886,7 @@ function exerciseForm(k, sl, n0) {
   var ch = sl.cat ? choices(sl.cat) : [];
   if (ch.length) h += '<div class="choices">' + ch.map(function (x, i) {
     return '<button class="choice' + (sl.name.toLowerCase() === x.name.toLowerCase() ? ' on' : '') + '" data-act="idea" data-s="' + k + '" data-i="' + i + '">' +
-      '<b>' + esc(x.name) + '</b>' + (x.today ? '<small>done today</small>' : '') + '</button>';
+      '<b>' + esc(x.name) + '</b><small>' + GN[x.g] + (x.today ? ' · done today' : '') + '</small></button>';
   }).join('') + '</div><span class="hint">Tap one, or type a new one:</span>';
   else if (sl.cat) h += '<span class="hint">None of your ' + S.active.groups.filter(function (g) { return g !== 'cardio'; }).map(function (g) { return GN[g].toLowerCase(); }).join(', ') +
     ' exercises use ' + CN[sl.cat] + ' yet. Type one in; once it\'s in ' + KNOWN + ' workouts it shows up here.</span>';
