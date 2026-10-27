@@ -380,6 +380,35 @@ h1 u, .sn, .tear .tn, .lastw .lwd, .count b { background: none; -webkit-backgrou
 .hex b { font-size: 15px; }
 .hsets { display: flex; flex-wrap: wrap; gap: 4px; }
 .hsets i { font-style: normal; font-size: 13px; color: var(--mute); background: rgba(255, 255, 255, .8); border: 1px solid var(--soft); border-radius: 999px; padding: 2px 9px; }
+/* home: up next */
+.nextup, .lifts, .month { gap: 10px; padding: 12px; }
+.nu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.nuday { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 4px 10px; border-radius: 16px; border: 1px solid var(--soft); background: rgba(255, 255, 255, .7); color: var(--ink); }
+.nuday b { font-size: 14px; }
+.nuday small { font-size: 12px; color: var(--mute); }
+.nud { font-size: 34px; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.nuday.due { background: var(--grad); border-color: transparent; color: #fff; box-shadow: var(--glow); }
+.nuday.due small { color: rgba(255, 255, 255, .85); }
+/* stats: top lifts + month */
+.tl { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.tl li { display: grid; grid-template-columns: 1fr auto 46px; align-items: baseline; gap: 10px; padding: 8px 2px; border-bottom: 1px solid var(--soft); font-size: 15px; }
+.tl li:last-child { border-bottom: 0; }
+.tl li > span { min-width: 0; }
+.tl li b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.tl li:first-child b { color: var(--pen); }
+.tl small { font-size: 12px; color: var(--mute); text-align: right; }
+.pb { font-size: 10px; font-weight: 700; letter-spacing: .06em; color: #fff; background: var(--pen); border-radius: 999px; padding: 1px 6px; margin-left: 4px; vertical-align: 2px; }
+.legend { display: flex; align-items: center; gap: 4px; font-size: 11px; }
+.legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-left: 4px; }
+.legend .lw { background: var(--ink); }
+.legend .lc { background: var(--pen); }
+.cal7 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.cal7 .dh { font-size: 11px; font-weight: 700; color: var(--mute); padding-bottom: 2px; }
+.cal7 .dd { aspect-ratio: 1; max-width: 100%; display: grid; place-items: center; font-size: 13px; font-weight: 600; border-radius: 50%; font-variant-numeric: tabular-nums; }
+.cal7 .dd.past { color: var(--mute); }
+.cal7 .dd.w { background: var(--ink); color: #fff; }
+.cal7 .dd.c { background: var(--grad); color: #fff; box-shadow: 0 4px 10px rgba(31, 94, 255, .25); }
+.cal7 .dd.today { outline: 1.6px dashed var(--pen); outline-offset: -2px; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); }
 @media (prefers-reduced-motion: reduce) { .wiggle, .fig .m.pop path, .fig text.pop, .setchip.pop, .bigstamp { animation: none !important; } .burst { display: none; } .btn:active { transform: none; } }
 </style>
@@ -794,6 +823,13 @@ function homeView() {
     '<span class="boxes">' + boxes + '</span>' +
     '<span class="small">' + rc + ' of ' + ROAD.goal + ' cardios' + (next ? ' · next reward at ' + next[0] + ': ' + esc(next[1]) : ' · every reward unlocked!') + '</span></button>';
 
+  // Up next: leg, push and pull day, most rested first; tapping one starts a workout with it picked
+  h += '<div class="box nextup"><div class="topbar"><span class="head">Up next</span><span class="small muted">most rested first</span></div><div class="nu">' +
+    dueDays().map(function (d, i) {
+      return '<button class="nuday' + (i === 0 && d.tried ? ' due' : '') + '" data-act="nextday" data-d="' + d.sp[0] + '"><b>' + d.sp[0] + '</b>' +
+        '<span class="nud">' + (!d.tried ? '–' : d.days >= 14 ? '14+' : d.days) + '</span><small>' + (!d.tried ? 'not yet' : d.days === 0 ? 'today' : d.days === 1 ? 'day ago' : 'days ago') + '</small></button>';
+    }).join('') + '</div><span class="small muted">Tap a day to start a workout with it picked.</span></div>';
+
   h += '<div class="links"><button data-act="go" data-v="stats">Stats</button><button data-act="go" data-v="history">History</button></div>';
   return h;
 }
@@ -1036,6 +1072,48 @@ function funFacts(ws, all, lifts, volume, mins, cardio) {
   return '<div class="box"><span class="head">Fun facts</span><ul class="funlist">' + f.map(function (x) { return '<li><b>' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></li>'; }).join('') + '</ul><span class="small muted">New ones every day.</span></div>';
 }
 
+function topLifts(ws) {
+  // Heaviest weighted set per exercise, the day you first hit it; a best set in the last week that beat an earlier one is NEW
+  var best = {};
+  ws.forEach(function (w) {
+    var top = {};
+    w.sets.forEach(function (s) {
+      if (s.cat === 'cardio' || s.bw || !s.weight) return;
+      var k = s.name.trim().toLowerCase();
+      if (!top[k] || s.weight > top[k].weight) top[k] = { name: s.name.trim(), weight: s.weight };
+    });
+    Object.keys(top).forEach(function (k) {
+      var b = best[k];
+      if (!b) best[k] = { name: top[k].name, weight: top[k].weight, date: w.date, beat: false };
+      else if (top[k].weight > b.weight) { b.weight = top[k].weight; b.date = w.date; b.beat = true; }
+    });
+  });
+  var top = Object.keys(best).map(function (k) { return best[k]; }).sort(function (p, q) { return q.weight - p.weight; }).slice(0, 5);
+  if (!top.length) return '';
+  return '<div class="box lifts"><div class="topbar"><span class="head">Your top lifts</span><span class="small muted">heaviest set</span></div><ul class="tl">' +
+    top.map(function (x) {
+      var isNew = x.beat && daysBetween(x.date, new Date()) < 7;
+      return '<li><span>' + esc(x.name.charAt(0).toUpperCase() + x.name.slice(1)) + (isNew ? '<span class="pb">NEW</span>' : '') + '</span><b>' + x.weight + ' ' + S.unit + '</b>' +
+        '<small>' + new Date(x.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</small></li>';
+    }).join('') + '</ul></div>';
+}
+
+function monthBox(ws) {
+  // This month on a calendar: workout days dark, days with cardio blue
+  var now = new Date(), y = now.getFullYear(), m = now.getMonth(), last = new Date(y, m + 1, 0).getDate(), did = {}, n = 0;
+  ws.forEach(function (w) {
+    var d = new Date(w.date); if (d.getFullYear() !== y || d.getMonth() !== m) return;
+    if (!did[d.getDate()]) n++;
+    did[d.getDate()] = did[d.getDate()] === 'c' || cardioMinutes(w) > 0 ? 'c' : 'w';
+  });
+  var h = '<div class="box month"><div class="topbar"><span class="head">' + now.toLocaleDateString('en-US', { month: 'long' }) + ' · ' + plural(n, 'workout') + '</span>' +
+    '<span class="small muted legend"><i class="lw"></i>workout <i class="lc"></i>with cardio</span></div><div class="cal7">';
+  'SMTWTFS'.split('').forEach(function (d) { h += '<span class="dh">' + d + '</span>'; });
+  for (var i = new Date(y, m, 1).getDay(); i > 0; i--) h += '<span></span>';
+  for (var d = 1; d <= last; d++) h += '<span class="dd ' + (did[d] || (d < now.getDate() ? 'past' : '')) + (d === now.getDate() ? ' today' : '') + '">' + d + '</span>';
+  return h + '</div></div>';
+}
+
 function statsView() {
   var ws = sorted(), all = [], h = '<button class="back" data-act="go" data-v="home">‹ home</button><h1>Your <u>stats</u>' + star() + '</h1>';
   ws.forEach(function (w) { w.sets.forEach(function (s) { all.push({ s: s, w: w }); }); });
@@ -1059,6 +1137,8 @@ function statsView() {
   }
   h += '<div class="box chartbox"><span class="head">Workouts per week</span>' + vbars(wk, { label: 'Workouts per week for the last 8 weeks', hiLast: true }) + '<span class="small muted">The last bar is this week.</span></div>';
 
+  h += monthBox(ws);
+
   // Strength progress for one exercise
   var counts = {};
   lifts.forEach(function (x) { if (!x.s.bw && x.s.weight) counts[x.s.name] = (counts[x.s.name] || 0) + 1; });
@@ -1075,6 +1155,8 @@ function statsView() {
       line(pts, 'Heaviest ' + statsEx + ' set per workout') +
       '<span class="small muted">' + (pts.length < 2 ? 'Do it again to see a trend.' : gain > 0 ? 'Up ' + gain + ' ' + S.unit + ' since your first time.' : gain < 0 ? 'Down ' + (-gain) + ' ' + S.unit + ' from your first time.' : 'Same weight as your first time.') + '</span></div>';
   }
+
+  h += topLifts(ws);
 
   // Muscle groups by sets
   var gs = {};
@@ -1253,11 +1335,15 @@ document.addEventListener('click', function (ev) {
       var sp = suggestPicks(); picks = sp.picks; picked = sp.name;
       if (a === 'cardio') picks.cardio = true;
       go('pick'); return;
+    case 'nextday':
+      sp = suggestPicks(); picks = sp.picks; picked = sp.name;
+      // falls through: swap in the tapped day
     case 'day':
       // Swap in that day's muscles; abs stay, cardio stays as it was
       var day = SPLITS.filter(function (sp) { return sp[0] === t.dataset.d; })[0];
       var keep = { abs: true }; if (picks.cardio) keep.cardio = true;
       picks = keep; day[1].forEach(function (g) { picks[g] = true; }); picked = day[0];
+      if (a === 'nextday') { go('pick'); return; }
       break;
     case 'statex': statsEx = t.dataset.n; break;
     case 'stretch': stretched = !stretched; break;
