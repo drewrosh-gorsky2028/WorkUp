@@ -402,6 +402,7 @@ h1 u, .sn, .tear .tn, .lastw .lwd, .count b { background: none; -webkit-backgrou
 .legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-left: 4px; }
 .legend .lw { background: var(--ink); }
 .legend .lc { background: var(--pen); }
+.mtoggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; background: none; border: 0; padding: 2px 0; text-align: left; }
 .cal7 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
 .cal7 .dh { font-size: 11px; font-weight: 700; color: var(--mute); padding-bottom: 2px; }
 .cal7 .dd { aspect-ratio: 1; max-width: 100%; display: grid; place-items: center; font-size: 13px; font-weight: 600; border-radius: 50%; font-variant-numeric: tabular-nums; }
@@ -996,6 +997,7 @@ function roadView() {
 
 // ---------- stats ----------
 var statsEx = null;   // the exercise shown on the strength chart
+var monthOpen = false;   // the month calendar on Stats starts closed
 function vbars(rows, opts) {
   // Vertical bars: rows = [[label, value]], value labels only on the bars that matter
   var W = 320, H = 150, top = 18, bot = 22, n = rows.length, max = Math.max.apply(null, rows.map(function (r) { return r[1]; }).concat([1]));
@@ -1106,8 +1108,10 @@ function monthBox(ws) {
     if (!did[d.getDate()]) n++;
     did[d.getDate()] = did[d.getDate()] === 'c' || cardioMinutes(w) > 0 ? 'c' : 'w';
   });
-  var h = '<div class="box month"><div class="topbar"><span class="head">' + now.toLocaleDateString('en-US', { month: 'long' }) + ' · ' + plural(n, 'workout') + '</span>' +
-    '<span class="small muted legend"><i class="lw"></i>workout <i class="lc"></i>with cardio</span></div><div class="cal7">';
+  var h = '<div class="box month"><button class="mtoggle" data-act="month" aria-expanded="' + monthOpen + '"><span class="head">' + now.toLocaleDateString('en-US', { month: 'long' }) + ' · ' + plural(n, 'workout') + '</span>' +
+    '<span class="small muted">' + (monthOpen ? 'Hide ▴' : 'Show ▾') + '</span></button>';
+  if (!monthOpen) return h + '</div>';
+  h += '<span class="small muted legend"><i class="lw"></i>workout <i class="lc"></i>with cardio</span><div class="cal7">';
   'SMTWTFS'.split('').forEach(function (d) { h += '<span class="dh">' + d + '</span>'; });
   for (var i = new Date(y, m, 1).getDay(); i > 0; i--) h += '<span></span>';
   for (var d = 1; d <= last; d++) h += '<span class="dd ' + (did[d] || (d < now.getDate() ? 'past' : '')) + (d === now.getDate() ? ' today' : '') + '">' + d + '</span>';
@@ -1346,6 +1350,7 @@ document.addEventListener('click', function (ev) {
       if (a === 'nextday') { go('pick'); return; }
       break;
     case 'statex': statsEx = t.dataset.n; break;
+    case 'month': monthOpen = !monthOpen; break;
     case 'stretch': stretched = !stretched; break;
     case 'start': startWorkout(); return;
     case 'wrapped':
