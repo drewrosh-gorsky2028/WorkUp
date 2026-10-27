@@ -1,6 +1,6 @@
 // Offline cache: serve the app shell from cache, refresh it in the background.
-var CACHE = 'workup-v19';
-var FILES = ['./', 'index.html', 'manifest.json', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'quicksand.woff2'];
+var CACHE = 'workup-v20';
+var FILES = ['./', 'index.html', 'manifest.json', 'icon-lift-180.png', 'icon-lift-192.png', 'icon-lift-512.png', 'quicksand.woff2'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));
