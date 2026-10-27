@@ -612,8 +612,6 @@ function choices(cat) {
   var lists = order.map(function (g) { return candidates(g).filter(function (x) { return x.cat === cat; }); }), out = [], seen = {};
   function add(x) { var k = x.name.toLowerCase(); if (!seen[k] && out.length < 8) { seen[k] = 1; out.push(x); } }
   for (var i = 0; i < 8; i++) lists.forEach(function (l) { if (l[i]) add(l[i]); });
-  // Then the rest of your exercises on this equipment, so there's always something to tap
-  GROUPS.forEach(function (g) { if (g[0] !== 'cardio' && order.indexOf(g[0]) < 0) candidates(g[0]).filter(function (x) { return x.cat === cat; }).forEach(add); });
   out.forEach(function (x) { x.today = !!today[x.name.toLowerCase()]; });
   return out;
 }
@@ -885,7 +883,8 @@ function exerciseForm(k, sl, n0) {
     return '<button class="choice' + (sl.name.toLowerCase() === x.name.toLowerCase() ? ' on' : '') + '" data-act="idea" data-s="' + k + '" data-i="' + i + '">' +
       '<b>' + esc(x.name) + '</b>' + (x.today ? '<small>done today</small>' : '') + '</button>';
   }).join('') + '</div><span class="hint">Tap one, or type a new one:</span>';
-  else if (sl.cat) h += '<span class="hint">No ' + CN[sl.cat] + ' exercises logged yet. Type one in; once it\'s in ' + KNOWN + ' workouts it shows up here.</span>';
+  else if (sl.cat) h += '<span class="hint">None of your ' + S.active.groups.filter(function (g) { return g !== 'cardio'; }).map(function (g) { return GN[g].toLowerCase(); }).join(', ') +
+    ' exercises use ' + CN[sl.cat] + ' yet. Type one in; once it\'s in ' + KNOWN + ' workouts it shows up here.</span>';
   h += '<input class="name" id="exname-' + k + '" data-s="' + k + '" type="text" autocomplete="off" autocapitalize="sentences" placeholder="' + (k === 'b' ? 'like push-ups' : 'type it in, like chest press') + '" value="' + esc(sl.name) + '">' +
     '<div class="ghint" id="ghint-' + k + '">' + groupHint(k) + '</div>';
   h += '</div>';
