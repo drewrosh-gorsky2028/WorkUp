@@ -396,6 +396,8 @@ h1 u, .sn, .tear .tn, .lastw .lwd, .count b { background: none; -webkit-backgrou
 .tl li > span { min-width: 0; }
 .tl li b { font-size: 17px; font-variant-numeric: tabular-nums; }
 .tl li:first-child b { color: var(--pen); }
+.tl li b em { display: block; font-style: normal; font-size: 11px; font-weight: 600; color: var(--mute); text-align: right; }
+.perrow { display: flex; flex-direction: column; gap: 6px; margin-top: -2px; }
 .tl small { font-size: 12px; color: var(--mute); text-align: right; }
 .pb { font-size: 10px; font-weight: 700; letter-spacing: .06em; color: #fff; background: var(--pen); border-radius: 999px; padding: 1px 6px; margin-left: 4px; vertical-align: 2px; }
 .legend { display: flex; align-items: center; gap: 4px; font-size: 11px; }
@@ -565,9 +567,15 @@ function roadCount() {
   var a = localDate(ROAD.start), b = localDate(ROAD.end);
   return S.workouts.filter(function (w) { var d = new Date(w.date); return d >= a && d <= b && cardioMinutes(w) >= ROAD.minMinutes; }).length;
 }
+// Whether a weight is the total or for one side, leg or arm. No "per" means total.
+var PER = [[null, 'Total'], ['side', 'Each side'], ['leg', 'Per leg'], ['arm', 'Per arm']];
+var PERL = { side: 'each side', leg: 'per leg', arm: 'per arm' };
+function wt(s) { return s.weight + ' ' + S.unit + (PERL[s.per] ? ' ' + PERL[s.per] : ''); }
+// Everything lifted: one side, leg or arm counts twice
+function load2(s) { return s.per ? s.weight * 2 : s.weight; }
 function fmtSet(s) {
   if (s.cat === 'cardio') return s.minutes + ' min' + (s.miles ? ' · ' + s.miles + ' mi' : '');
-  var w = s.bw ? 'body weight' : s.weight + ' ' + S.unit;
+  var w = s.bw ? 'body weight' : wt(s);
   return w + (s.seconds != null ? ' · ' + mmss(s.seconds) : ' × ' + s.reps);
 }
 function lastSetNamed(name) {
@@ -654,11 +662,11 @@ function choices(cat) {
 // ---------- workout actions ----------
 function ui() { return S.active.ui; }
 function slot(k) { var u = ui(); return k === 'b' ? u.b : u; }
-function newSlot(cat) { return { cat: cat || null, name: '', g: null, weight: 45, reps: 10, bw: false, timer: false, tStart: 0, secs: 0 }; }
+function newSlot(cat) { return { cat: cat || null, name: '', g: null, weight: 45, per: null, reps: 10, bw: false, timer: false, tStart: 0, secs: 0 }; }
 function startWorkout() {
   var gs = GROUPS.map(function (g) { return g[0]; }).filter(function (g) { return picks[g]; });
   S.active = { id: uid(), date: new Date().toISOString(), groups: gs, stretch: stretched, sets: [],
-    ui: { cat: null, name: '', g: null, weight: 45, reps: 10, bw: false, timer: false, tStart: 0, secs: 0, machine: null, minutes: 20, miles: 1, b: null } };
+    ui: { cat: null, name: '', g: null, weight: 45, per: null, reps: 10, bw: false, timer: false, tStart: 0, secs: 0, machine: null, minutes: 20, miles: 1, b: null } };
   save(); go('workout');
 }
 function logSets(list) {
@@ -936,6 +944,9 @@ function exerciseForm(k, sl, n0) {
     '<div class="step"><span class="head">' + num(2) + (sl.timer ? 'Time' : 'Reps') + '</span>' +
     (sl.timer ? '<div class="stepper timer' + (sl.tStart ? ' run' : '') + '"><b id="tval-' + k + '">' + mmss(timerSecs(sl)) + '</b><button data-act="timer" data-s="' + k + '">' + (sl.tStart ? 'Stop' : sl.secs ? 'Restart' : 'Start') + '</button></div>' : stepper('reps', '', 1, k)) +
     '<button class="opt' + (sl.timer ? ' on' : '') + '" data-act="usetimer" data-s="' + k + '">⏱ Use a timer</button></div></div>';
+  if (!sl.bw) h += '<div class="perrow"><span class="hint">That weight is</span><div class="chips">' + PER.map(function (p) {
+    return '<button class="opt' + ((sl.per || null) === p[0] ? ' on' : '') + '" data-act="per" data-s="' + k + '" data-p="' + (p[0] || '') + '">' + p[1] + '</button>';
+  }).join('') + '</div></div>';
   return h;
 }
 function groupHint(k) {
@@ -966,7 +977,7 @@ function logGroups(sets) {
 }
 function shortSet(s) {
   if (s.cat === 'cardio') return s.minutes + ' min' + (s.miles ? ' · ' + s.miles + ' mi' : '');
-  return (s.bw ? 'BW' : s.weight) + (s.seconds != null ? ' · ' + mmss(s.seconds) : ' × ' + s.reps);
+  return (s.bw ? 'BW' : s.weight + (s.per ? '/' + s.per : '')) + (s.seconds != null ? ' · ' + mmss(s.seconds) : ' × ' + s.reps);
 }
 function stepper(field, unit, inc, k) {
   k = k || 'a';
@@ -1052,7 +1063,7 @@ function funFacts(ws, all, lifts, volume, mins, cardio) {
   if (volume >= 600) f.push([n(volume / 600) + ' baby grand pianos', 'Lifted, not played. Beethoven could never.']);
   if (volume >= 2700) f.push([n(volume / 2700) + ' Mini Coopers', 'Total weight lifted. You could open a dealership.']);
   if (volume >= 8000) f.push([n(volume / 8000) + ' killer whales', 'Shamu is shaking.']);
-  var heavy = 0, heavyName = ''; lifts.forEach(function (x) { if (!x.s.bw && x.s.weight > heavy) { heavy = x.s.weight; heavyName = x.s.name; } });
+  var heavy = 0, heavyName = ''; lifts.forEach(function (x) { if (!x.s.bw && load2(x.s) > heavy) { heavy = load2(x.s); heavyName = x.s.name; } });
   if (heavy) f.push(['Heaviest lift: ' + heavy + ' ' + S.unit, heavyName + '. ' + (heavy >= 150 ? 'That\'s a whole grown man.' : heavy >= 65 ? 'That\'s ' + n(heavy / 65) + ' golden retrievers at once.' : 'Pocket-sized, for now.')]);
   var most = 0; ws.forEach(function (w) { most = Math.max(most, w.sets.filter(function (s) { return s.cat !== 'cardio'; }).length); });
   if (most) f.push(['Most sets in one day: ' + most, most >= 20 ? 'Main character energy.' : 'Warming up, clearly.']);
@@ -1082,20 +1093,20 @@ function topLifts(ws) {
     w.sets.forEach(function (s) {
       if (s.cat === 'cardio' || s.bw || !s.weight) return;
       var k = s.name.trim().toLowerCase();
-      if (!top[k] || s.weight > top[k].weight) top[k] = { name: s.name.trim(), weight: s.weight };
+      if (!top[k] || s.weight > top[k].weight) top[k] = { name: s.name.trim(), weight: s.weight, per: s.per };
     });
     Object.keys(top).forEach(function (k) {
       var b = best[k];
-      if (!b) best[k] = { name: top[k].name, weight: top[k].weight, date: w.date, beat: false };
-      else if (top[k].weight > b.weight) { b.weight = top[k].weight; b.date = w.date; b.beat = true; }
+      if (!b) best[k] = { name: top[k].name, weight: top[k].weight, per: top[k].per, date: w.date, beat: false };
+      else if (top[k].weight > b.weight) { b.weight = top[k].weight; b.per = top[k].per; b.date = w.date; b.beat = true; }
     });
   });
-  var top = Object.keys(best).map(function (k) { return best[k]; }).sort(function (p, q) { return q.weight - p.weight; }).slice(0, 5);
+  var top = Object.keys(best).map(function (k) { return best[k]; }).sort(function (p, q) { return load2(q) - load2(p); }).slice(0, 5);
   if (!top.length) return '';
   return '<div class="box lifts"><div class="topbar"><span class="head">Your top lifts</span><span class="small muted">heaviest set</span></div><ul class="tl">' +
     top.map(function (x) {
       var isNew = x.beat && daysBetween(x.date, new Date()) < 7;
-      return '<li><span>' + esc(x.name.charAt(0).toUpperCase() + x.name.slice(1)) + (isNew ? '<span class="pb">NEW</span>' : '') + '</span><b>' + x.weight + ' ' + S.unit + '</b>' +
+      return '<li><span>' + esc(x.name.charAt(0).toUpperCase() + x.name.slice(1)) + (isNew ? '<span class="pb">NEW</span>' : '') + '</span><b>' + x.weight + ' ' + S.unit + (PERL[x.per] ? '<em>' + PERL[x.per] + '</em>' : '') + '</b>' +
         '<small>' + new Date(x.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</small></li>';
     }).join('') + '</ul></div>';
 }
@@ -1123,7 +1134,7 @@ function statsView() {
   ws.forEach(function (w) { w.sets.forEach(function (s) { all.push({ s: s, w: w }); }); });
   if (!ws.length) return h + '<div class="box empty">Log a workout and your charts show up here.</div>';
   var lifts = all.filter(function (x) { return x.s.cat !== 'cardio'; });
-  var volume = lifts.reduce(function (t, x) { return t + (x.s.bw || !x.s.weight || !x.s.reps ? 0 : x.s.weight * x.s.reps); }, 0);
+  var volume = lifts.reduce(function (t, x) { return t + (x.s.bw || !x.s.weight || !x.s.reps ? 0 : load2(x.s) * x.s.reps); }, 0);
   var mins = ws.reduce(function (t, w) { return t + (w.end ? Math.max(0, (new Date(w.end) - new Date(w.date)) / 60000) : 0); }, 0);
   var cardio = ws.reduce(function (t, w) { return t + cardioMinutes(w); }, 0);
   h += '<div class="tiles4">' +
@@ -1373,6 +1384,7 @@ document.addEventListener('click', function (ev) {
     case 'choose': slot(t.dataset.s).choose = true; save(); break;
     case 'setg': sl = slot(t.dataset.s); sl.g = t.dataset.g; sl.choose = false; save(); break;
     case 'bw': sl = slot(t.dataset.s); sl.bw = !sl.bw; save(); break;
+    case 'per': sl = slot(t.dataset.s); sl.per = t.dataset.p || null; save(); break;
     case 'usetimer': sl = slot(t.dataset.s); sl.timer = !sl.timer; sl.tStart = 0; sl.secs = 0; save(); break;
     case 'timer':
       sl = slot(t.dataset.s);
@@ -1398,7 +1410,7 @@ document.addEventListener('click', function (ev) {
         if (!groupFor(x)) { x.choose = true; save(); render(); setToast('Tap which muscle the ' + second + 'exercise works.'); return; }
         if (x.timer && x.tStart) { x.secs = timerSecs(x); x.tStart = 0; }
         if (x.timer && !x.secs) { setToast('Start the timer, then stop it when you\'re done.'); return; }
-        list.push({ group: groupFor(x), cat: x.cat, name: x.name, weight: x.bw ? null : x.weight, bw: x.bw, reps: x.timer ? null : x.reps, seconds: x.timer ? x.secs : null });
+        list.push({ group: groupFor(x), cat: x.cat, name: x.name, weight: x.bw ? null : x.weight, per: x.bw ? null : x.per || null, bw: x.bw, reps: x.timer ? null : x.reps, seconds: x.timer ? x.secs : null });
       }
       logSets(list);
       // A superset keeps its names for the next round; a single exercise starts fresh
@@ -1441,7 +1453,7 @@ function prefill(k) {
   // Same exercise as before? Start from what you did last time.
   var u = slot(k), s = u.name && lastSetNamed(u.name);
   if (!s || s.cat === 'cardio') return;
-  u.bw = !!s.bw; if (s.weight) u.weight = s.weight;
+  u.bw = !!s.bw; if (s.weight) u.weight = s.weight; u.per = s.per || null;
   if (s.seconds != null) { u.timer = true; u.secs = 0; u.tStart = 0; } else { u.timer = false; if (s.reps) u.reps = s.reps; }
 }
 
