@@ -455,7 +455,7 @@ var BW = 0;
 var FIRST_WEEK = [
   { id: 'w1020', date: at(10, 20, 8, 55), end: at(10, 20, 9, 41), groups: ['quads', 'glutes', 'hamstrings', 'abs'], stretch: false, sets: [].concat(
     sets('quads', 'machine', 'Leg press', [[100, 10], [140, 10], [140, 10], [160, 8]]),
-    sets('quads', 'machine', 'Hip abduction', [[100, 10], [130, 10], [130, 10], [145, 10]]),
+    sets('glutes', 'machine', 'Hip abduction', [[100, 10], [130, 10], [130, 10], [145, 10]]),
     sets('quads', 'machine', 'Hip adduction', [[130, 10], [130, 10], [145, 10]]),
     sets('hamstrings', 'rack', 'Hex bar deadlift', [[115, 5], [135, 5], [165, 1]]),
     sets('quads', 'floor', 'Bulgarian split squats', [[BW, 10], [BW, 10], [BW, 10]]),
@@ -480,10 +480,10 @@ var FIRST_WEEK = [
     sets('abs', 'floor', 'Ab dolly', [[BW, 15], [BW, 15]])) }
 ];
 if (!S.firstWeek) { S.workouts = FIRST_WEEK; S.active = null; S.firstWeek = 1; save(); }
-// Drew counts hip abduction as quads; move sets already filed under glutes
-if (!S.abductQuads) {
-  S.workouts.concat(S.active ? [S.active] : []).forEach(function (w) { w.sets.forEach(function (s) { if (s.group === 'glutes' && /abduct/i.test(s.name)) s.group = 'quads'; }); });
-  S.abductQuads = 1; save();
+// Hip abduction is glutes (it was briefly moved to quads); put back any sets filed under quads
+if (!S.abductGlutes) {
+  S.workouts.concat(S.active ? [S.active] : []).forEach(function (w) { w.sets.forEach(function (s) { if (s.group === 'quads' && /abduct/i.test(s.name)) s.group = 'glutes'; }); });
+  S.abductGlutes = 1; save();
 }
 
 var view = S.active ? 'workout' : 'home';
@@ -550,8 +550,8 @@ function lastSetNamed(name) {
 // Which muscle an exercise works, from its name: your own past sets first, then these words
 var AUTO = [
   ['hamstrings', /leg curl|hamstring|\brdl|romanian|good ?morning|nordic|stiff.?leg/],
-  ['quads', /leg press|leg ext|squat|lunge|hack|adduct|abduct|step.?up|quad|sissy|wall sit/],
-  ['glutes', /hip thrust|glute|bridge|donkey|hydrant|swing|clam|frog|butt/],
+  ['quads', /leg press|leg ext|squat|lunge|hack|adduct|step.?up|quad|sissy|wall sit/],
+  ['glutes', /hip thrust|glute|bridge|abduct|donkey|hydrant|swing|clam|frog|butt/],
   ['abs', /\babs?\b|crunch|plank|sit.?up|leg (raise|lift)|knee raise|twist|dead ?bug|hollow|scissor|flutter|v.?up|dolly|mountain|oblique|wood ?chop|pallof|toe touch|bicycle/],
   ['triceps', /tri|push.?down|skull|dip|overhead ext|close.?grip|kickback/],
   ['biceps', /curl|bicep|hammer|preacher/],
