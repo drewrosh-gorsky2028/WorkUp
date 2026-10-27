@@ -1379,7 +1379,7 @@ document.addEventListener('click', function (ev) {
     case 'idea':
       sl = slot(t.dataset.s);
       var ch = choices(sl.cat)[+t.dataset.i];
-      if (ch) { sl.name = ch.name; sl.g = ch.g; sl.choose = false; prefill(t.dataset.s); toastMsg = ''; }
+      if (ch) { sl.name = ch.name; sl.g = ch.g; sl.choose = false; toastMsg = ''; }
       save(); break;
     case 'choose': slot(t.dataset.s).choose = true; save(); break;
     case 'setg': sl = slot(t.dataset.s); sl.g = t.dataset.g; sl.choose = false; save(); break;
@@ -1413,8 +1413,7 @@ document.addEventListener('click', function (ev) {
         list.push({ group: groupFor(x), cat: x.cat, name: x.name, weight: x.bw ? null : x.weight, per: x.bw ? null : x.per || null, bw: x.bw, reps: x.timer ? null : x.reps, seconds: x.timer ? x.secs : null });
       }
       logSets(list);
-      // A superset keeps its names for the next round; a single exercise starts fresh
-      if (!u.b) { u.name = ''; u.g = null; u.choose = false; }
+      // Everything stays as it was for the next set; only what you type changes it
       u.secs = 0; if (u.b) u.b.secs = 0;
       save();
       break;
@@ -1449,19 +1448,6 @@ document.addEventListener('click', function (ev) {
   if (grew) burst(ev.clientX, ev.clientY);
 });
 
-function prefill(k) {
-  // Same exercise as before? Start from what you did last time.
-  var u = slot(k), s = u.name && lastSetNamed(u.name);
-  if (!s || s.cat === 'cardio') return;
-  u.bw = !!s.bw; if (s.weight) u.weight = s.weight; u.per = s.per || null;
-  if (s.seconds != null) { u.timer = true; u.secs = 0; u.tStart = 0; } else { u.timer = false; if (s.reps) u.reps = s.reps; }
-}
-
-var tapping = false;
-document.addEventListener('pointerdown', function () { tapping = true; }, true);
-document.addEventListener('pointerup', function () { setTimeout(function () { tapping = false; }, 0); }, true);
-document.addEventListener('pointercancel', function () { tapping = false; }, true);
-
 document.addEventListener('input', function (ev) {
   var k = ev.target.dataset && ev.target.dataset.s;
   if (/^exname-/.test(ev.target.id) && S.active) {
@@ -1475,7 +1461,6 @@ document.addEventListener('change', function (ev) {
   if (/^exname-/.test(t.id) && S.active) {
     // Leaving the name by tapping a button: don't redraw under the tap, or the tap gets lost
     var sl = slot(t.dataset.s), before = JSON.stringify(sl); sl.name = t.value.trim();
-    if (!tapping) prefill(t.dataset.s);
     save(); if (JSON.stringify(sl) !== before) render();
   }
   if (t.dataset && t.dataset.act === 'edit' && S.active) { slot(t.dataset.s)[t.dataset.f] = Math.max(0, round1(num(t.value))); save(); render(); }
