@@ -431,6 +431,10 @@ var GN = {}; GROUPS.forEach(function (g) { GN[g[0]] = g[1]; });
 var CATS = [['machine', 'Machine'], ['free', 'Free weights'], ['floor', 'Floor'], ['rack', 'Rack']];
 var CN = { machine: 'machine', free: 'free weights', floor: 'floor', rack: 'rack', cardio: 'cardio' };
 var MACHINES = ['Treadmill walk', 'Treadmill run', 'StairMaster', 'Outdoor run'];
+// Incline only on a treadmill, miles only on a run
+function hasIncline(m) { return /treadmill/i.test(m || ''); }
+function hasMiles(m) { return /run/i.test(m || ''); }
+function cardioLine(s) { return s.minutes + ' min' + (s.miles ? ' · ' + s.miles + ' mi' : '') + (s.incline ? ' · ' + s.incline + '% incline' : ''); }
 var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 // Road to Antigua (Christmas trip): cardio of 20+ minutes in one workout fills a box
@@ -444,7 +448,7 @@ var SPLITS = [['Leg day', ['glutes', 'quads', 'hamstrings']], ['Push day', ['che
 var KNOWN = 2, SUGGEST_FROM = '2026-10-27';
 
 // ---------- storage ----------
-// A workout: { id, date, end, groups, stretch, sets: [{ group, cat, name, weight, bw, reps, seconds, minutes, miles }] }
+// A workout: { id, date, end, groups, stretch, sets: [{ group, cat, name, weight, bw, reps, seconds, minutes, miles, incline }] }
 var S;
 function fresh() { return { workouts: [], active: null, unit: 'lb', photos: {} }; }
 function migrate(d) {
@@ -574,7 +578,7 @@ function wt(s) { return s.weight + ' ' + S.unit + (PERL[s.per] ? ' ' + PERL[s.pe
 // Everything lifted: one side, leg or arm counts twice
 function load2(s) { return s.per ? s.weight * 2 : s.weight; }
 function fmtSet(s) {
-  if (s.cat === 'cardio') return s.minutes + ' min' + (s.miles ? ' · ' + s.miles + ' mi' : '');
+  if (s.cat === 'cardio') return cardioLine(s);
   var w = s.bw ? 'body weight' : wt(s);
   return w + (s.seconds != null ? ' · ' + mmss(s.seconds) : ' × ' + s.reps);
 }
@@ -666,7 +670,7 @@ function newSlot(cat) { return { cat: cat || null, name: '', g: null, weight: 45
 function startWorkout() {
   var gs = GROUPS.map(function (g) { return g[0]; }).filter(function (g) { return picks[g]; });
   S.active = { id: uid(), date: new Date().toISOString(), groups: gs, stretch: stretched, sets: [],
-    ui: { cat: null, name: '', g: null, weight: 45, per: null, reps: 10, bw: false, timer: false, tStart: 0, secs: 0, machine: null, minutes: 20, miles: 1, b: null } };
+    ui: { cat: null, name: '', g: null, weight: 45, per: null, reps: 10, bw: false, timer: false, tStart: 0, secs: 0, machine: null, minutes: 20, miles: 1, incline: 0, b: null } };
   save(); go('workout');
 }
 function logSets(list) {
@@ -892,8 +896,11 @@ function workoutView() {
   if (cardio) {
     h += '<div class="step"><span class="head"><i class="num">2</i>Which machine?</span><div class="tiles">' +
       MACHINES.map(function (m) { return '<button class="tile' + (u.machine === m ? ' on' : '') + '" data-act="machine" data-m="' + m + '">' + m + '</button>'; }).join('') + '</div></div>';
-    h += '<div class="two"><div class="step"><span class="head"><i class="num">3</i>Time</span>' + stepper('minutes', 'min', 1) + '</div>' +
-      '<div class="step"><span class="head"><i class="num">4</i>Miles</span>' + stepper('miles', 'mi', 0.1) + '</div></div>';
+    var f = [['minutes', 'Time', 'min', 1]], n = 3;
+    if (hasIncline(u.machine)) f.push(['incline', 'Incline', '%', 0.5]);
+    if (hasMiles(u.machine)) f.push(['miles', 'Miles', 'mi', 0.1]);
+    var cells = f.map(function (x) { return '<div class="step"><span class="head"><i class="num">' + (n++) + '</i>' + x[1] + '</span>' + stepper(x[0], x[2], x[3]) + '</div>'; });
+    h += cells.length === 1 ? cells[0] : '<div class="two">' + cells.slice(0, 2).join('') + '</div>' + (cells[2] || '');
     h += '<button class="btn" data-act="log">Log cardio ✓</button>';
     h += '<p class="hint" style="margin:-6px 0 0;text-align:center">' + ROAD.minMinutes + '+ minutes fills a box on your Road to Antigua.</p>';
   } else {
@@ -976,12 +983,12 @@ function logGroups(sets) {
   return rows.sort(function (a, b) { return b.latest - a.latest; }).map(function (r) { return r.u; });
 }
 function shortSet(s) {
-  if (s.cat === 'cardio') return s.minutes + ' min' + (s.miles ? ' · ' + s.miles + ' mi' : '');
+  if (s.cat === 'cardio') return cardioLine(s);
   return (s.bw ? 'BW' : s.weight + (s.per ? '/' + s.per : '')) + (s.seconds != null ? ' · ' + mmss(s.seconds) : ' × ' + s.reps);
 }
 function stepper(field, unit, inc, k) {
   k = k || 'a';
-  var v = slot(k)[field], d = ' data-s="' + k + '" data-f="' + field + '"';
+  var v = slot(k)[field] || 0, d = ' data-s="' + k + '" data-f="' + field + '"';
   return '<div class="stepper"><button data-act="step"' + d + ' data-d="-' + inc + '" aria-label="Less">−</button>' +
     '<label><input inputmode="decimal" data-act="edit"' + d + ' value="' + (field === 'miles' ? v.toFixed(1) : v) + '" aria-label="' + field + '">' + unit + '</label>' +
     '<button data-act="step"' + d + ' data-d="' + inc + '" aria-label="More">+</button></div>';
@@ -1397,7 +1404,8 @@ document.addEventListener('click', function (ev) {
       if (u.cat === 'cardio') {
         if (!u.machine) { setToast('Pick a machine first (step 2).'); return; }
         if (!u.minutes) { setToast('Add your minutes first (step 3).'); return; }
-        logSets([{ group: 'cardio', cat: 'cardio', name: u.machine, minutes: u.minutes, miles: u.miles || null }]);
+        logSets([{ group: 'cardio', cat: 'cardio', name: u.machine, minutes: u.minutes,
+          miles: hasMiles(u.machine) ? u.miles || null : null, incline: hasIncline(u.machine) ? u.incline || null : null }]);
         break;
       }
       if (!u.cat) { setToast('Pick what you\'re using first (step 1).'); return; }
