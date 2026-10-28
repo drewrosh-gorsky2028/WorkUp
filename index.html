@@ -412,6 +412,21 @@ h1 u, .sn, .tear .tn, .lastw .lwd, .count b { background: none; -webkit-backgrou
 .cal7 .dd.w { background: var(--ink); color: #fff; }
 .cal7 .dd.c { background: var(--grad); color: #fff; box-shadow: 0 4px 10px rgba(31, 94, 255, .25); }
 .cal7 .dd.today { outline: 1.6px dashed var(--pen); outline-offset: -2px; }
+.hbtns { display: flex; justify-content: space-between; gap: 8px; margin-top: 4px; }
+/* recap */
+.vsline { margin: -6px 0 0; font-size: 14px; color: var(--mute); }
+.rd { font-size: 13px; font-weight: 700; color: var(--mute); }
+.rd.up { color: var(--pen); }
+.rgroup { gap: 6px; }
+.rlist { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; }
+.rlist li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--soft); }
+.rlist li > span { display: flex; flex-direction: column; min-width: 0; }
+.rlist b { font-size: 15px; }
+.rlist small { font-size: 13px; color: var(--mute); }
+.rlist em { flex: none; font-style: normal; font-size: 13px; font-weight: 700; border-radius: 999px; padding: 3px 10px; background: var(--deep); color: var(--mute); }
+.rlist em.up { background: var(--grad); color: #fff; }
+.rlist em.new { background: transparent; border: 1px solid var(--soft); }
+.shareimg { width: 100%; border-radius: 16px; box-shadow: 0 4px 18px rgba(20, 23, 31, .1); }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); }
 @media (prefers-reduced-motion: reduce) { .wiggle, .fig .m.pop path, .fig text.pop, .setchip.pop, .bigstamp { animation: none !important; } .burst { display: none; } .btn:active { transform: none; } }
 </style>
@@ -526,6 +541,7 @@ var stretched = false;
 var armed = null; // two-tap confirmations
 var toastMsg = '';
 var storyIdx = 0, storyMonth = null, photoOnly = false;
+var recapId = null, shareImg = '';   // the workout on the recap page, and its picture when there's no share sheet
 
 // ---------- helpers ----------
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -702,7 +718,8 @@ function finishWorkout() {
   S.workouts.push(w);
   S.active = null;
   picks = { abs: true }; picked = ''; stretched = false;
-  save(); releaseWake(); go('home');
+  recapId = w.id; shareImg = '';
+  save(); releaseWake(); go('recap');
   stamp(w);
 }
 function stamp(w) {
@@ -1226,9 +1243,186 @@ function historyView() {
     h += '<div class="box hist"><div class="topbar"><span class="when">' + fmtDate(w.date) + '</span><span class="small muted">' + (mins ? mins + ' min' : '') + '</span></div>' +
       '<span class="small">' + Object.keys(groupsOf(w)).map(function (g) { return GN[g]; }).join(' · ') + (w.stretch ? ' · stretched' : '') + '</span>' +
       histGroups(w) +
-      '<div style="text-align:right"><button class="opt" data-act="delw" data-id="' + w.id + '">' + (armed === 'del' + w.id ? 'Tap again to delete' : 'Delete') + '</button></div></div>';
+      '<div class="hbtns"><button class="opt" data-act="recap" data-id="' + w.id + '">Recap &amp; share</button><button class="opt" data-act="delw" data-id="' + w.id + '">' + (armed === 'del' + w.id ? 'Tap again to delete' : 'Delete') + '</button></div></div>';
   });
   return h;
+}
+
+// ---------- recap: after Finish, today vs. the last time each muscle was trained ----------
+function dayOf(w) {
+  // Leg, push or pull day from what was lifted; otherwise the muscles themselves
+  var g = groupsOf(w), best = null, n = 0;
+  SPLITS.forEach(function (sp) { var k = sp[1].filter(function (x) { return g[x]; }).length; if (k > n) { n = k; best = sp; } });
+  if (best) return best;
+  var gs = Object.keys(g);
+  return [gs.length === 1 && gs[0] === 'cardio' ? 'Cardio day' : gs.map(function (x) { return GN[x]; }).join(' + ') || 'Workout', gs];
+}
+function before(w, test) {
+  // The most recent workout before w that passes test
+  var ws = sorted();
+  for (var i = ws.length - 1; i >= 0; i--) if (ws[i].date < w.date && ws[i].id !== w.id && test(ws[i])) return ws[i];
+  return null;
+}
+function lifted(sets) { return sets.reduce(function (t, s) { return t + (s.cat === 'cardio' || s.bw || !s.weight || !s.reps ? 0 : load2(s) * s.reps); }, 0); }
+function liftSets(w) { return w.sets.filter(function (s) { return s.cat !== 'cardio'; }); }
+function topSet(sets) {
+  // Heaviest set, then most reps (or longest hold)
+  return sets.reduce(function (b, s) {
+    if (!b) return s;
+    var lw = s.bw ? 0 : load2(s), bw = b.bw ? 0 : load2(b);
+    if (lw !== bw) return lw > bw ? s : b;
+    return (s.seconds != null ? s.seconds : s.reps || 0) > (b.seconds != null ? b.seconds : b.reps || 0) ? s : b;
+  }, null);
+}
+function delta(a, b) {
+  // How a's best set compares to b's: [1 up, 0 same, -1 down, label]
+  var d;
+  if (!a.bw && !b.bw && (d = round1(load2(a) - load2(b)))) return [d > 0 ? 1 : -1, (d > 0 ? '+' : '−') + Math.abs(d) + ' ' + S.unit];
+  if (a.seconds != null && b.seconds != null) { d = a.seconds - b.seconds; if (d) return [d > 0 ? 1 : -1, (d > 0 ? '+' : '−') + Math.abs(d) + ' sec']; }
+  else if (a.bw === b.bw && (d = (a.reps || 0) - (b.reps || 0))) return [d > 0 ? 1 : -1, (d > 0 ? '+' : '−') + plural(Math.abs(d), 'rep')];
+  return [0, 'same'];
+}
+function signed(d, unit) { return d ? (d > 0 ? '+' : '−') + Math.abs(Math.round(d)).toLocaleString() + (unit ? ' ' + unit : '') : 'same'; }
+function recap(w) {
+  var day = dayOf(w);
+  var prev = before(w, function (p) { return day[1].some(function (g) { return groupsOf(p)[g]; }); });
+  var mins = w.end ? Math.round((new Date(w.end) - new Date(w.date)) / 60000) : 0;
+  var r = { w: w, day: day[0], prev: prev, mins: mins, sets: liftSets(w).length, lb: lifted(w.sets), cardio: cardioMinutes(w), groups: [] };
+  if (prev) r.vs = { sets: r.sets - liftSets(prev).length, lb: r.lb - lifted(prev.sets), mins: prev.end ? mins - Math.round((new Date(prev.end) - new Date(prev.date)) / 60000) : null };
+  // Each muscle in the order it was trained, against the last workout that trained it
+  var order = [], by = {};
+  w.sets.forEach(function (s) { if (!by[s.group]) { by[s.group] = []; order.push(s.group); } by[s.group].push(s); });
+  r.groups = order.map(function (g) {
+    var last = before(w, function (p) { return p.sets.some(function (s) { return s.group === g; }); });
+    var then = last ? last.sets.filter(function (s) { return s.group === g; }) : [];
+    var row = { g: g, last: last, sets: by[g], ex: [] };
+    if (g === 'cardio') {
+      var m = by[g].reduce(function (t, s) { return t + (s.minutes || 0); }, 0);
+      row.ex = by[g].map(function (s) { return { name: s.name, best: s, d: null }; });
+      row.note = plural(m, 'minute') + (last ? ' · ' + signed(m - cardioMinutes(last), 'min') + ' vs. last time' : '');
+      return row;
+    }
+    var names = [], ex = {};
+    by[g].forEach(function (s) { var k = s.name.trim().toLowerCase(); if (!ex[k]) { ex[k] = []; names.push(k); } ex[k].push(s); });
+    row.ex = names.map(function (k) {
+      // Each exercise against the last time you did that exercise
+      var same = function (s) { return s.name.trim().toLowerCase() === k; }, pw = before(w, function (p) { return p.sets.some(same); });
+      var mine = topSet(ex[k]), old = pw ? topSet(pw.sets.filter(same)) : null;
+      var name = ex[k][0].name.trim();
+      return { name: name.charAt(0).toUpperCase() + name.slice(1), best: mine, d: old ? delta(mine, old) : null, n: ex[k].length };
+    });
+    var lb = lifted(by[g]);
+    row.note = plural(by[g].length, 'set') + (lb ? ' · ' + lb.toLocaleString() + ' ' + S.unit : '') +
+      (last ? ' · ' + (lb && lifted(then) ? signed(lb - lifted(then), S.unit) : signed(by[g].length - then.length, 'sets')) + ' vs. last time' : '');
+    return row;
+  });
+  return r;
+}
+function shortDay(iso) { return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
+function recapView() {
+  var w = S.workouts.filter(function (x) { return x.id === recapId; })[0];
+  if (!w) { view = 'home'; return homeView(); }
+  var r = recap(w), vs = r.vs;
+  var tile = function (v, label, d) { return '<div class="box"><b class="sn">' + v + '</b><span class="small muted">' + label + '</span>' + (d != null ? '<span class="rd' + (d > 0 ? ' up' : '') + '">' + d + '</span>' : '') + '</div>'; };
+  var h = '<button class="back" data-act="go" data-v="home">‹ home</button>';
+  h += '<div><h1>' + esc(r.day) + ' <u>done</u>' + star() + '</h1><p class="sub">' + fmtDate(w.date) + (r.mins ? ' · ' + r.mins + ' min' : '') + '</p></div>';
+  h += '<p class="vsline">' + (r.prev ? 'Compared with your last ' + esc(r.day.toLowerCase()) + ', ' + fmtDate(r.prev.date) : 'Your first ' + esc(r.day.toLowerCase()) + '. Next time you\'ll see how it compares.') + '</p>';
+  h += '<div class="tiles4">' +
+    tile(r.sets, 'sets', vs ? signed(vs.sets) : null) +
+    tile(r.lb >= 10000 ? (r.lb / 1000).toFixed(1) + 'k' : r.lb.toLocaleString(), S.unit + ' lifted', vs ? signed(vs.lb, S.unit) : null) +
+    tile(r.mins || '–', 'minutes', vs && vs.mins != null && r.mins ? signed(vs.mins, 'min') : null) +
+    tile(r.cardio, 'cardio minutes', null) + '</div>';
+  r.groups.forEach(function (row) {
+    h += '<div class="box rgroup"><div class="topbar"><span class="hg">' + esc(GN[row.g] || 'Other') + '</span><span class="small muted">' + (row.last ? 'last ' + shortDay(row.last.date) : 'first time') + '</span></div>' +
+      '<span class="small muted">' + esc(row.note) + '</span><ul class="rlist">' + row.ex.map(function (x) {
+        return '<li><span><b>' + esc(x.name) + '</b><small>' + (row.g === 'cardio' ? esc(fmtSet(x.best)) : 'best ' + esc(fmtSet(x.best)) + (x.n > 1 ? ' · ' + x.n + ' sets' : '')) + '</small></span>' +
+          (x.d ? '<em class="' + (x.d[0] > 0 ? 'up' : x.d[0] < 0 ? 'down' : '') + '">' + (x.d[0] > 0 ? '↑ ' : x.d[0] < 0 ? '↓ ' : '') + esc(x.d[1]) + '</em>' : row.g === 'cardio' ? '' : '<em class="new">new</em>') + '</li>';
+      }).join('') + '</ul></div>';
+  });
+  h += '<button class="btn" data-act="share">Share workout</button>';
+  if (shareImg) h += '<div class="box" style="gap:8px"><span class="head">Your recap picture</span><img class="shareimg" src="' + shareImg + '" alt="Workout recap picture"><span class="small muted">Press and hold the picture to save or send it.</span></div>';
+  h += '<button class="ghost" data-act="go" data-v="home">Done</button>';
+  return h;
+}
+
+// The recap as a picture to send in Messages
+function recapCanvas(w) {
+  var r = recap(w), W = 1080, P = 72, F = 'Quicksand, ui-rounded, -apple-system, sans-serif';
+  var rows = [], room = 13;
+  r.groups.forEach(function (g) { if (room > 1) { rows.push({ head: g }); room--; g.ex.forEach(function (x) { if (room > 0) { rows.push({ x: x, g: g.g }); room--; } }); } });
+  var more = r.groups.reduce(function (t, g) { return t + g.ex.length + 1; }, 0) - rows.length;
+  var H = 560 + rows.reduce(function (t, x) { return t + (x.head ? 78 : 76); }, 0) + (more > 0 ? 50 : 0) + 140;
+  var c = document.createElement('canvas'); c.width = W; c.height = H;
+  var x = c.getContext('2d');
+  var bg = x.createLinearGradient(0, 0, W * .3, H); bg.addColorStop(0, '#f6f7f9'); bg.addColorStop(.45, '#ffffff'); bg.addColorStop(1, '#eceef2');
+  x.fillStyle = bg; x.fillRect(0, 0, W, H);
+  function font(px, wt) { x.font = wt + ' ' + px + 'px ' + F; }
+  function text(s, X, Y, px, wt, col, align) { font(px, wt); x.fillStyle = col; x.textAlign = align || 'left'; x.fillText(s, X, Y); }
+  function box(X, Y, w2, h2, rad, fill) { x.beginPath(); x.roundRect ? x.roundRect(X, Y, w2, h2, rad) : x.rect(X, Y, w2, h2); x.fillStyle = fill; x.fill(); }
+  function fit(s, px, wt, max) { font(px, wt); if (x.measureText(s).width <= max) return s; while (s.length > 1 && x.measureText(s + '…').width > max) s = s.slice(0, -1); return s + '…'; }
+  var blue = x.createLinearGradient(0, 0, W, 0); blue.addColorStop(0, '#1f5eff'); blue.addColorStop(1, '#38b6ff');
+  // Title
+  text('WORKUP', P, 112, 30, 700, '#6b7280');
+  text(new Date(w.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }), W - P, 112, 30, 600, '#6b7280', 'right');
+  font(92, 700); x.textAlign = 'left'; x.fillStyle = '#14171f'; x.fillText(r.day, P, 222);
+  var tw = x.measureText(r.day + ' ').width; x.fillStyle = blue; x.fillText('done', P + tw, 222);
+  text(r.prev ? 'vs. last ' + r.day.toLowerCase() + ', ' + shortDay(r.prev.date) : 'First ' + r.day.toLowerCase() + ' logged', P, 278, 32, 600, '#6b7280');
+  // Stat tiles
+  var vs = r.vs, tiles = [[r.sets, 'sets', vs ? signed(vs.sets) : ''], [r.lb >= 10000 ? (r.lb / 1000).toFixed(1) + 'k' : r.lb.toLocaleString(), S.unit + ' lifted', vs ? signed(vs.lb, S.unit) : ''],
+    [r.mins || '–', 'minutes', vs && vs.mins != null && r.mins ? signed(vs.mins, 'min') : '']];
+  if (r.cardio) tiles[2] = [r.cardio, 'cardio min', ''];
+  var tW = (W - 2 * P - 2 * 24) / 3;
+  tiles.forEach(function (t, i) {
+    var X = P + i * (tW + 24), Y = 320;
+    box(X, Y, tW, 180, 34, i === 1 ? blue : 'rgba(255,255,255,.95)');
+    if (i !== 1) { x.strokeStyle = 'rgba(20,23,31,.08)'; x.lineWidth = 2; x.stroke(); }
+    var ink = i === 1 ? '#ffffff' : '#14171f', sub = i === 1 ? 'rgba(255,255,255,.85)' : '#6b7280';
+    text(String(t[0]), X + 30, Y + 82, 62, 700, ink);
+    text(t[1], X + 30, Y + 124, 28, 600, sub);
+    if (t[2]) text(t[2], X + 30, Y + 158, 26, 700, i === 1 ? '#ffffff' : t[2].charAt(0) === '+' ? '#1f5eff' : '#6b7280');
+  });
+  // Muscles and exercises
+  var Y = 560;
+  rows.forEach(function (row) {
+    if (row.head) {
+      text((GN[row.head.g] || 'Other').toUpperCase(), P, Y + 50, 28, 700, '#1f5eff');
+      text(row.head.last ? 'last ' + shortDay(row.head.last.date) : 'first time', W - P, Y + 50, 26, 600, '#6b7280', 'right');
+      Y += 78; return;
+    }
+    var e = row.x, tag = e.d ? (e.d[0] > 0 ? '↑ ' : e.d[0] < 0 ? '↓ ' : '') + e.d[1] : row.g === 'cardio' ? '' : 'new';
+    box(P, Y, W - 2 * P, 64, 22, 'rgba(255,255,255,.9)');
+    var tagW = 0;
+    if (tag) {
+      font(26, 700); tagW = x.measureText(tag).width + 36;
+      box(W - P - 12 - tagW, Y + 12, tagW, 40, 20, e.d && e.d[0] > 0 ? blue : '#eceef2');
+      text(tag, W - P - 12 - tagW / 2, Y + 41, 26, 700, e.d && e.d[0] > 0 ? '#ffffff' : '#6b7280', 'center');
+    }
+    var setTxt = shortSet(e.best);
+    font(28, 600); var sw = x.measureText(setTxt).width;
+    text(setTxt, W - P - 24 - tagW - (tag ? 8 : 0), Y + 43, 28, 600, '#6b7280', 'right');
+    text(fit(e.name, 30, 700, W - 2 * P - 72 - tagW - sw), P + 24, Y + 43, 30, 700, '#14171f');
+    Y += 76;
+  });
+  if (more > 0) { text('+ ' + more + ' more', P, Y + 36, 28, 600, '#6b7280'); Y += 50; }
+  // Footer
+  box(P, H - 116, W - 2 * P, 72, 36, blue);
+  text((r.mins ? r.mins + ' minutes · ' : '') + plural(r.sets, 'set') + (r.cardio ? ' · ' + r.cardio + ' min cardio' : ''), P + 36, H - 69, 30, 700, '#ffffff');
+  text('✦ WorkUp', W - P - 36, H - 69, 30, 700, '#ffffff', 'right');
+  return c;
+}
+function shareRecap(w) {
+  var c = recapCanvas(w), url = c.toDataURL('image/png'), name = 'workup-' + w.date.slice(0, 10) + '.png';
+  try {
+    var bin = atob(url.split(',')[1]), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    var file = new File([bytes], name, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file] }).catch(function () {});
+      return;
+    }
+  } catch (e) {}
+  // No share sheet (a computer): show the picture so it can be saved
+  shareImg = url; render();
 }
 
 function settingsView() {
@@ -1309,7 +1503,7 @@ function wrappedView() {
 
 function render() {
   if (view === 'workout' && !S.active) view = 'home';
-  app.innerHTML = ({ home: homeView, pick: pickView, why: whyView, workout: workoutView, road: roadView, history: historyView, stats: statsView, settings: settingsView, wrapped: wrappedView }[view])();
+  app.innerHTML = ({ home: homeView, pick: pickView, why: whyView, workout: workoutView, road: roadView, history: historyView, stats: statsView, settings: settingsView, wrapped: wrappedView, recap: recapView }[view])();
   if (view === 'workout') holdWake();
 }
 
@@ -1436,6 +1630,8 @@ document.addEventListener('click', function (ev) {
       if (armed === 'del' + t.dataset.id) { S.workouts = S.workouts.filter(function (x) { return x.id !== t.dataset.id; }); armed = null; save(); }
       else armed = 'del' + t.dataset.id;
       break;
+    case 'recap': recapId = t.dataset.id; shareImg = ''; go('recap'); return;
+    case 'share': shareRecap(S.workouts.filter(function (x) { return x.id === recapId; })[0]); return;
     case 'unit': S.unit = t.dataset.u; save(); break;
     case 'export': exportData(); return;
     case 'reset':
